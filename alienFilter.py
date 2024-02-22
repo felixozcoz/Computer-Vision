@@ -1,7 +1,28 @@
+# ---------------------------------------------
+# Fichero: alienFilter.py
+# ---------------------------------------------
+# Escuela de Ingeniería y Arquitectura de Zaragoza
+# Visión por Computador	
+# 2023- 2024
+#
+# Félix Ozcoz Eraso     801108
+# Victor Marcuello Baquero  
+#
+# Descripción:
+#   Programa que aplica un filtro de color a la piel (alien filter)
+#   y al fondo de la imagen capturada por la cámara.
+# ---------------------------------------------
+
 import cv2
 import numpy as np
 
-def color_skin_and_background(frame, color):
+# Función que aplica un filtro de color a la piel y al fondo de una imagen
+# Parámetros:
+#   frame: imagen de entrada
+#   color: color RGB para la piel
+# Salida:
+#   result: imagen resultante
+def alien_filter(frame, color):
     # Convertir el fotograma a espacio de color HSV
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -15,12 +36,10 @@ def color_skin_and_background(frame, color):
     # Invertir la máscara de piel para obtener el fondo
     background_mask = cv2.bitwise_not(skin_mask)
 
-    # Aplicar el color RGB al fondo
-    #background_color = np.full(frame.shape, color, dtype=np.uint8)
-    #background = cv2.bitwise_and(background_color, background_color, mask=background_mask)
+    # Aplicar la máscara de fondo para obtener el fondo
     background = cv2.bitwise_and(frame, frame, mask=background_mask)
 
-    # Aplicar la máscara de piel para colorear la piel
+    # Crear una imagen con el color de piel
     skin_color = np.full(frame.shape, color, dtype=np.uint8)
     colored_skin = cv2.bitwise_and(skin_color, skin_color, mask=skin_mask)
 
@@ -28,6 +47,8 @@ def color_skin_and_background(frame, color):
     result = cv2.add(colored_skin, background)
 
     return result
+
+
 
 # Iniciar la captura de la cámara
 cap = cv2.VideoCapture(0)

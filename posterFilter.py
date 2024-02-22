@@ -1,9 +1,30 @@
+# ---------------------------------------------
+# Fichero: posterFilter.py
+# ---------------------------------------------
+# Escuela de Ingeniería y Arquitectura de Zaragoza
+# Visión por Computador	
+# 2023- 2024
+#
+# Félix Ozcoz Eraso     801108
+# Victor Marcuello Baquero  
+#
+# Descripción:
+#   Programa que aplica un filtro de posterización 
+#   a la imagen capturada por la cámara.
+# ---------------------------------------------
+
 import numpy as np
 import cv2
 
-def colorReduce2(img_in, div=np.uint8(64)):
+# Función que aplica un filtro de posterización a una imagen
+# Parámetros:
+#   img_in: imagen de entrada
+#   div: divisor para la reducción de colores
+# Salida:
+#   img2: imagen resultante
+def colorReduce(img_in, div=np.uint8(64)):
     img2 = img_in.copy()
-    for idx, x in np.ndenumerate(img_in):  # one or three channels
+    for idx, x in np.ndenumerate(img_in): 
         img2[idx] = np.uint8(np.uint8(x // div)*div)
     return img2
 
@@ -26,7 +47,7 @@ while True:
         break
 
     # Mostrar el fotograma resultante
-    cv2.imshow('PosterFilter', colorReduce2(frame))
+    cv2.imshow('PosterFilter', colorReduce(frame))
 
     # Detener la ejecución si se presiona la tecla 'q'
     if cv2.waitKey(1) & 0xFF == ord('q'):
