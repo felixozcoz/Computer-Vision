@@ -18,7 +18,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import warnings
 
-
 # Apply the barrel distortion filter
 # Parameters:
 #   - image: source image (numpy array format)
@@ -42,7 +41,7 @@ def geometric_distortion(image, k1, k2=0.0):
     # calculate distorted radius
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        r_distorted = r * (1 + k1 * r + k2 * r**2)
+        r_distorted = r * (1 + k1 * r**2 + k2 * r**4)
     
     print(r_distorted)
     # calculate distorte coordinates
@@ -57,5 +56,4 @@ def geometric_distortion(image, k1, k2=0.0):
     image_distorted = cv2.remap(image, x_dis.astype(np.float32), y_dis.astype(np.float32), cv2.INTER_LINEAR)
 
     return image_distorted
-
 
