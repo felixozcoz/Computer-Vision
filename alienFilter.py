@@ -69,7 +69,7 @@ while True:
 
     # Cambiar el color de la piel a un color RGB específico (por ejemplo, verde)
     green_color = (220, 100, 100)
-    frame_colored_skin_and_background = color_skin_and_background(frame, green_color)
+    frame_colored_skin_and_background = alien_filter(frame, green_color)
 
     # Mostrar el fotograma resultante
     cv2.imshow('Colored Skin and Background', frame_colored_skin_and_background)
