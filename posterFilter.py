@@ -6,7 +6,7 @@
 # 2023- 2024
 #
 # Félix Ozcoz Eraso     801108
-# Victor Marcuello Baquero  
+# Victor Marcuello Baquero      741278
 #
 # Descripción:
 #   Programa que aplica un filtro de posterización 
