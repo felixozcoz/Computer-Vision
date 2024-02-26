@@ -61,6 +61,26 @@ def geometric_distortion(image, k1, k2=0.0):
 
 # ----- Test the function -----
 
+
+def plot_comparision(image, k1_barrel, k2_barrel, k1_pincushion, k2_pincushion):
+    # Crear una figura con dos subplots
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+
+    # Mostrar la primera imagen en el primer subplot
+    axs[0].imshow(cv2.cvtColor(geometric_distortion(image, k1_barrel, k2_barrel), cv2.COLOR_BGR2RGB))
+    axs[0].set_title('Barrel distortion')
+
+    # Mostrar la segunda imagen en el segundo subplot
+    axs[1].imshow(cv2.cvtColor(geometric_distortion(image, k1_pincushion, k2_pincushion), cv2.COLOR_BGR2RGB))
+    axs[1].set_title('Pincushion distortion')
+
+    # Ajustar espacio entre subplots
+    plt.tight_layout()
+
+    # Mostrar la figura
+    plt.show()
+
+
 # Test the function with a sample image
 def test_geometric_distortion_sample_image(image, k1, k2):
     cv2.imshow('DistortionFilter', geometric_distortion(image, k1, k2))
@@ -96,3 +116,12 @@ def test_geometric_distortion_video_capture(k1, k2):
     # Liberar la cámara y cerrar todas las ventanas
     cap.release()
     cv2.destroyAllWindows()
+
+
+
+
+image = cv2.imread(r'C:\Users\Lenovo\OneDrive\Escritorio\lena_color.jpg', cv2.IMREAD_COLOR)
+
+#test_geometric_distortion_sample_image(image, 0.00001, 0.0)
+#test_geometric_distortion_sample_image(image, -0.000005, 0.0)
+plot_comparision(image, 0.00001, 0.0, -0.000005, 0.0)
