@@ -5,7 +5,7 @@
 # Visión por Computador	
 # 2023- 2024
 #
-# Félix Ozcoz Eraso     801108
+# Félix Ozcoz Eraso             801108
 # Victor Marcuello Baquero      741278
 #
 # Descripción:
@@ -19,15 +19,19 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-# Apply the barrel distortion filter
-# Parameters:
-#   - image: source image (numpy array format)
-#   - k1: coefficient of distortion 1
-#   - k2: coefficient de distortion 2
-# k = 0 --> not effect
-# k < 0 --> pincushion distortion
-# k < 0 --> barrel distortion
 def geometric_distortion(image, k1, k2=0.0):
+    '''
+        Apply the barrel distortion filter
+
+        Parameters:
+            - image: source image (numpy array format)
+            - k1: coefficient of distortion 1
+            - k2: coefficient de distortion 2
+            k = 0 --> not effect
+            k < 0 --> pincushion distortion
+            k < 0 --> barrel distortion
+    '''
+
     [ydim, xdim] = image.shape[:2]
     cx, cy = xdim // 2, ydim // 2  # define distortion centre
 
@@ -46,17 +50,12 @@ def geometric_distortion(image, k1, k2=0.0):
     r_distorted = r * (1 + k1 * r ** 2 + k2 * r ** 4)
 
     # calculate distorte coordinates
-    # nota: esta fórmula es igual de válida que la que nos dan, pero esta 
-    # se centra en la distorsión basada en la relación entre las distancias radiales
-    # a diferencia de la que nos dan que se centra en el desplazamiento y la distorsión
-    # basada en la distancia 'r' y la posición 'x' con respecto al centro
     x_dis = x * (r_distorted / r) + cx
     y_dis = y * (r_distorted / r) + cy
 
     # remap image
-    image_distorted = cv2.remap(image, x_dis.astype(np.float32), y_dis.astype(np.float32), cv2.INTER_LINEAR)
+    return cv2.remap(image, x_dis.astype(np.float32), y_dis.astype(np.float32), cv2.INTER_LINEAR)
 
-    return image_distorted
 
 
 # ----- Test the function -----
@@ -118,10 +117,13 @@ def test_geometric_distortion_video_capture(k1, k2):
     cv2.destroyAllWindows()
 
 
-
+# ---- Main ----
 
 image = cv2.imread(r'C:\Users\Lenovo\OneDrive\Escritorio\lena_color.jpg', cv2.IMREAD_COLOR)
 
+# visualización de distorsiones aisladas
 #test_geometric_distortion_sample_image(image, 0.00001, 0.0)
 #test_geometric_distortion_sample_image(image, -0.000005, 0.0)
+
+# comparación de efectors de distorsión
 plot_comparision(image, 0.00001, 0.0, -0.000005, 0.0)
