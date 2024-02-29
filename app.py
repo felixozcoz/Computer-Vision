@@ -20,24 +20,16 @@ class SimpleImageApp:
         self.filters = {
             "Original": lambda img: img,
             "Gray": lambda img: cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),
-            "Blur": lambda img: cv2.GaussianBlur(img, (15, 15), 0),
-            "Canny Edge": lambda img: cv2.Canny(img, 100, 200),
         }
 
         self.filter_var = tk.StringVar()
         self.filter_var.set("Original")
 
-        self.filter_menu = ttk.Combobox(root, textvariable=self.filter_var, values=list(self.filters.keys()))
+        self.filter_menu = ttk.Combobox(root, textvariable=self.filter_var, values=list(self.filters.keys()), state="readonly")
         self.filter_menu.pack()
-
-        self.btn_open_camera = tk.Button(root, text="Open Camera", command=self.open_camera)
-        self.btn_open_camera.pack()
 
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
         self.btn_capture.pack()
-
-        self.btn_close = tk.Button(root, text="Close Camera", command=self.close_camera)
-        self.btn_close.pack()
 
         # Iniciar el proceso de visualización de la cámara
         self.show_camera_feed()
