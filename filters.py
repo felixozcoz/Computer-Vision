@@ -81,7 +81,7 @@ def contrastNbright(image, alpha, beta):
 
 
 
-def alien_filter(frame, color):
+def alien_filter(frame, color=(220, 100, 100)):
     '''
         Apply a filter of color to the skin and the background of an image
         
@@ -93,30 +93,34 @@ def alien_filter(frame, color):
     '''
     # Convert the frame to HSV color space
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
+    
     # Define skin range color in HSV
     lower_skin = np.array([0, 48, 80], dtype=np.uint8)
     upper_skin = np.array([20, 255, 255], dtype=np.uint8)
-
+    
     # Define a mask for the skin
     skin_mask = cv2.inRange(hsv_frame, lower_skin, upper_skin)
-
-    # Invert the skin mask to get the background
-    background_mask = cv2.bitwise_not(skin_mask)
-
-    # Apply the background mask to get the background
-    background = cv2.bitwise_and(frame, frame, mask=background_mask)
-
+    
     # Create an image with the skin
     skin_color = np.full(frame.shape, color, dtype=np.uint8)
-    colored_skin = cv2.bitwise_and(skin_color, skin_color, mask=skin_mask)
-
+    
     # Combine the colored skin and the background
-    return cv2.add(colored_skin, background)
+    result = cv2.bitwise_and(skin_color, skin_color, mask=skin_mask)
+    
+    # Invert the skin mask to get the background
+    background_mask = cv2.bitwise_not(skin_mask)
+    
+    # Apply the background mask to get the background
+    background = cv2.bitwise_and(frame, frame, mask=background_mask)
+    
+    # Combine the colored skin and the background
+    result = cv2.add(result, background)
+    
+    return result
 
 
 
-def posterization_filter(img_in, div=np.uint8(64)):
+def posterization_filter(frame, div=np.uint8(64)):
     '''
         Apply a posterization filter to an image
         
@@ -127,9 +131,6 @@ def posterization_filter(img_in, div=np.uint8(64)):
         Output:
             img_result: result image
     '''
-    img_result = img_in.copy()
-
-    for idx, x in np.ndenumerate(img_in): 
-        img_result[idx] = np.uint8(np.uint8(x // div)*div)
+    img_result = (frame // div) * div
 
     return img_result

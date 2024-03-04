@@ -16,7 +16,7 @@
 import cv2
 import numpy as np
 
-def alien_filter(frame, color):
+def alien_filter(frame, color=(220, 100, 100)):
     '''
         Apply a filter of color to the skin and the background of an image
         
