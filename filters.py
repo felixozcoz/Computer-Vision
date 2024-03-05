@@ -131,3 +131,58 @@ def posterization_filter(frame, div=np.uint8(64)):
     img_result = (frame // div) * div
 
     return img_result
+
+#   Optional image processing functions
+
+def gaussian_blurring(frame,delta):
+
+    img_result = cv2.GaussianBlur(frame,delta)
+    return img_result
+
+def median_blurring(frame,delta):
+
+    img_result = cv2.medianBlur(frame,delta)
+    return img_result
+
+def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
+    ht, wd = frame.shape[:2]
+
+    # transpose the image
+    framet = cv2.transpose(frame)
+
+    # create diagonal bi-tonal mask
+    mask = np.zeros((ht,wd),dtype=np.uint8)
+    points = np.array([[[0, 0],[wd, 0],[wd, ht]]])
+    cv2.fillPoly(mask,points,255)
+    if invert == "yes":
+        mask = cv2.bitwise_not(mask)
+
+    # composite frame and framet using mask
+    compA = cv2.bitwise_and(framet,framet,mask=mask)
+    compB = cv2.bitwise_and(frame,frame,mask=255-mask)
+    comp = cv2.add(compA,compB)
+
+    # rotate composite
+    if rotation_angle == 90:
+        comp = cv2.rotate(comp,cv2.ROTATE_90_CLOCKWISE)
+    elif rotation_angle == 180:
+        comp = cv2.rotate(comp,cv2.ROTATE_180)
+    elif rotation_angle == 270:
+        comp = cv2.rotate(comp, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    # mirror (flip) horizontally
+    mirror = cv2.flip(comp,1)
+
+    # concatenate horizontally
+    top = np.hstack((comp,mirror))
+
+    # mirror (flip) vertically
+    bottom = cv2.flip(top,0)
+
+    # concatenate vertically
+    kaleidoscope = np.vstack((top,bottom))
+
+    # resize
+    kaleidoscope_result = cv2.resize(kaleidoscope, (0,0), fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+
+    return kaleidoscope_result
