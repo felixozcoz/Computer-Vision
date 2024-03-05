@@ -46,6 +46,10 @@ class SimpleImageApp:
         # Variable for the color of the posterization filter
         self.div_color_reduce_var = tk.IntVar(value=64)
 
+        # Variable for the kaleidoscope filter
+        self.invert_var = tk.StringVar(value="Yes")
+        self.rotation_var = tk.IntVar(value=90)
+
         # Filters
         self.filters = {
             "Original": lambda img: img,
@@ -53,6 +57,7 @@ class SimpleImageApp:
             "Posterization": lambda img, div: filters.posterization_filter(img, div),
             "Alien": lambda img, color: filters.alien_filter(img, color),
             "Geometric distortion": lambda img, k1, k2: filters.geometric_distortion(img, k1, k2),
+            "Kaleidoscope": lambda img, invert, rotation_angle: filters.kaleidoscope_filter(img,invert,rotation_angle)
         }
 
         # ------------------- Widgets -------------------
@@ -78,6 +83,11 @@ class SimpleImageApp:
 
         # Slider control for the color reduction of the posterization filter
         self.div_color_reduce_var = tk.Scale(root, label="Color Reduction", from_=2, to=255, resolution=1, variable=self.div_color_reduce_var, orient=tk.HORIZONTAL)
+
+        # Slider control for the kaleidoscope filter
+        self.invert_button_select1 = tk.Radiobutton(root, text="YES", value="yes", variable=self.invert_var)
+        self.invert_button_select2 = tk.Radiobutton(root, text="NO", value="no", variable=self.invert_var)
+        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=90, to=270, resolution=90, variable=self.rotation_var, orient=tk.HORIZONTAL)
 
         # Capture and save button
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
@@ -131,6 +141,12 @@ class SimpleImageApp:
                     self.filtered_frame = filter_function(frame, div)
                     self.update_parameters_ui()
 
+                elif selected_filter == "Kaleidoscope":
+                    inv = self.invert_var.get()
+                    rot = self.rotation_var.get()
+                    self.filtered_frame = filter_function(frame,inv,rot)
+                    self.update_parameters_ui()
+
                 else:
                     self.filtered_frame = filter_function(frame)
                     self.hide_parameters_ui(None)  # hide sliders
@@ -167,6 +183,11 @@ class SimpleImageApp:
 
         elif selected_filter == "Posterization":
             self.div_color_reduce_var.pack()
+
+        elif selected_filter == "Kaleidoscope":
+            self.invert_button_select1.pack()
+            self.invert_button_select2.pack()
+            self.rotation_angle_slider.pack()
             
 
     def hide_parameters_ui(self, selected_filter):
@@ -195,6 +216,12 @@ class SimpleImageApp:
             # hide slider and set the value to the default value
             self.div_color_reduce_var.set(64)
             self.div_color_reduce_var.pack_forget()
+
+        if selected_filter != "Kaleidoscope":
+            self.rotation_var.set(90)
+            self.rotation_angle_slider.pack_forget()
+            self.invert_button_select1.pack_forget()
+            self.invert_button_select2.pack_forget()
 
 
     def capture_and_save(self):
