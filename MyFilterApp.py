@@ -40,11 +40,17 @@ class SimpleImageApp:
         self.k1_var = tk.DoubleVar(value=0.0)
         self.k2_var = tk.DoubleVar(value=0.0)
 
+        # Variable for the color of the alien filter
+        self.color_alien_var = tk.StringVar(value="#dc6464")
+
+        # Variable for the color of the posterization filter
+        self.div_color_reduce_var = tk.IntVar(value=64)
+
         # Filters
         self.filters = {
             "Original": lambda img: img,
             "Contrast": lambda img, alpha, beta: cv2.convertScaleAbs(img, alpha=alpha, beta=beta),
-            "Posterization": lambda img: filters.posterization_filter(img),
+            "Posterization": lambda img, div: filters.posterization_filter(img, div),
             "Alien": lambda img, color: filters.alien_filter(img, color),
             "Geometric distortion": lambda img, k1, k2: filters.geometric_distortion(img, k1, k2),
         }
@@ -69,7 +75,9 @@ class SimpleImageApp:
 
         # Slider control for the color of the alien filter
         self.color_button = tk.Button(root, text="Select Color", command=self.select_color)
-        self.color_alien_var = tk.StringVar(value="#dc6464")
+
+        # Slider control for the color reduction of the posterization filter
+        self.div_color_reduce_var = tk.Scale(root, label="Color Reduction", from_=2, to=255, resolution=1, variable=self.div_color_reduce_var, orient=tk.HORIZONTAL)
 
         # Capture and save button
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
@@ -118,6 +126,11 @@ class SimpleImageApp:
                     self.filtered_frame = filter_function(frame, k1, k2)
                     self.update_parameters_ui()
 
+                elif selected_filter == "Posterization":
+                    div = self.div_color_reduce_var.get()
+                    self.filtered_frame = filter_function(frame, div)
+                    self.update_parameters_ui()
+
                 else:
                     self.filtered_frame = filter_function(frame)
                     self.hide_parameters_ui()  # hide sliders
@@ -149,6 +162,9 @@ class SimpleImageApp:
 
         elif selected_filter == "Alien":
             self.color_button.pack()
+
+        elif selected_filter == "Posterization":
+            self.div_color_reduce_var.pack()
             
 
     def hide_parameters_ui(self):
@@ -173,6 +189,11 @@ class SimpleImageApp:
         if selected_filter != "Alien":
             # hide color button and set the value to the default color value
             self.color_button.pack_forget()
+
+        if selected_filter != "Posterization":
+            # hide slider and set the value to the default value
+            self.div_color_reduce_var.set(64)
+            self.div_color_reduce_var.pack_forget()
 
 
     def capture_and_save(self):
