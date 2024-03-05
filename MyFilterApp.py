@@ -133,7 +133,7 @@ class SimpleImageApp:
 
                 else:
                     self.filtered_frame = filter_function(frame)
-                    self.hide_parameters_ui()  # hide sliders
+                    self.hide_parameters_ui(None)  # hide sliders
                 
                 self.current_frame = cv2.cvtColor(self.filtered_frame, cv2.COLOR_BGR2RGB)
             else:
@@ -145,7 +145,9 @@ class SimpleImageApp:
 
 
     def update_parameters_ui(self, *args):
-        self.show_parameters_ui(self.filter_var.get())
+        selected_filter = self.filter_var.get()
+        self.hide_parameters_ui(selected_filter)
+        self.show_parameters_ui(selected_filter)
 
 
     def show_parameters_ui(self, selected_filter):
@@ -167,11 +169,10 @@ class SimpleImageApp:
             self.div_color_reduce_var.pack()
             
 
-    def hide_parameters_ui(self):
+    def hide_parameters_ui(self, selected_filter):
         '''
             Hide the sliders for the unselected filter and set the values to 0
         '''
-        selected_filter = self.show_parameters_ui(self.filter_var.get())
         if selected_filter != "Contrast":
             # hide sliders for contrast filter and set the values to 0
             self.alpha_var.set(0.0)
