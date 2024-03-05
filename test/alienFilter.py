@@ -22,12 +22,12 @@ def alien_filter(frame, color=(220, 100, 100)):
         
         Parameters:
             frame: source image
-            colour: RGB color for the skin 
+            colour: BGR color for the skin 
         Output:
             result: result image
     '''
     # Convert the frame to HSV color space
-    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
 
     # Define skin range color in HSV
     lower_skin = np.array([0, 48, 80], dtype=np.uint8)

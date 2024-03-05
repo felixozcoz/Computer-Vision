@@ -38,17 +38,14 @@ def geometric_distortion(image, k1, k2=0.0):
     x, y = np.meshgrid(np.arange(xdim), np.arange(ydim))  # define the grid to manipulate the image
 
     x, y = x - cx, y - cy   # centering the image
-    
-    # regularize the origin coordinates (0, 0) to the center of the image (cx, cy) 
-    # in order to avoid division by zero. This value maintains the original position of the pixels
-    x[cx, cy], y[cx, cy] = 1, 1  
 
     # calculate radius
     r = np.sqrt(x ** 2 + y ** 2)
+    r[cx, cy] = 1  # avoid division by zero
 
     # calculate distorted radius
     r_distorted = r * (1 + k1 * r ** 2 + k2 * r ** 4)
-
+    
     # calculate distorte coordinates
     x_dis = x * (r_distorted / r) + cx
     y_dis = y * (r_distorted / r) + cy
@@ -87,7 +84,7 @@ def alien_filter(frame, color=(220, 100, 100)):
         
         Parameters:
             frame: source image
-            colour: RGB color for the skin 
+            color: RGB color for the skin 
         Output:
             result: result image
     '''
@@ -102,7 +99,7 @@ def alien_filter(frame, color=(220, 100, 100)):
     skin_mask = cv2.inRange(hsv_frame, lower_skin, upper_skin)
     
     # Create an image with the skin
-    skin_color = np.full(frame.shape, color, dtype=np.uint8)
+    skin_color = np.full(frame.shape, color[::-1], dtype=np.uint8)
     
     # Combine the colored skin and the background
     result = cv2.bitwise_and(skin_color, skin_color, mask=skin_mask)
