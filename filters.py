@@ -15,8 +15,6 @@
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 
 def geometric_distortion(image, k1, k2=0.0):
@@ -41,7 +39,7 @@ def geometric_distortion(image, k1, k2=0.0):
 
     # calculate radius
     r = np.sqrt(x ** 2 + y ** 2)
-    r[cx, cy] = 1  # avoid division by zero
+    r[cy, cx] = 1  # avoid division by zero
 
     # calculate distorted radius
     r_distorted = r * (1 + k1 * r ** 2 + k2 * r ** 4)
@@ -88,29 +86,29 @@ def alien_filter(frame, color=(220, 100, 100)):
         Output:
             result: result image
     '''
-    # Convert the frame to HSV color space
+    # convert the frame to HSV color space
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
-    # Define skin range color in HSV
+    # define skin range color in HSV
     lower_skin = np.array([0, 48, 80], dtype=np.uint8)
     upper_skin = np.array([20, 255, 255], dtype=np.uint8)
     
-    # Define a mask for the skin
+    # define a mask for the skin
     skin_mask = cv2.inRange(hsv_frame, lower_skin, upper_skin)
     
-    # Create an image with the skin
+    # create an image with the skin
     skin_color = np.full(frame.shape, color[::-1], dtype=np.uint8)
     
-    # Combine the colored skin and the background
+    # combine the colored skin and the background
     result = cv2.bitwise_and(skin_color, skin_color, mask=skin_mask)
     
-    # Invert the skin mask to get the background
+    # invert the skin mask to get the background
     background_mask = cv2.bitwise_not(skin_mask)
     
-    # Apply the background mask to get the background
+    # apply the background mask to get the background
     background = cv2.bitwise_and(frame, frame, mask=background_mask)
     
-    # Combine the colored skin and the background
+    # combine the colored skin and the background
     result = cv2.add(result, background)
     
     return result
@@ -132,9 +130,8 @@ def posterization_filter(frame, div=np.uint8(64)):
 
     return img_result
 
-#   Optional image processing functions
 
-def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
+def kaleidoscope_filter(frame, invert, rotation_angle=np.uint8(90)):
     '''
         Apply a kaleidoscope filter to an image
 
@@ -146,41 +143,39 @@ def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
         Output:
             kaleidoscope_result: result image
     '''
-    # Transform the original image into a squared image (we use the height parameter
-    # in order to resize).
+    # transform the original image into a squared image 
     frame = cv2.resize(frame,(frame.shape[0],frame.shape[0]))
     ht,wd = frame.shape[:2] # ht = height, wd = width
 
-    # transpose the image
+    # transpose the image: horizontal flip (mirror effect)
     framet = cv2.transpose(frame)
 
-    # create diagonal bi-tonal mask
+    # create diagonal bi-tonal mask which defines the reflection area
     mask = np.zeros((ht,wd),dtype=np.uint8)
     points = np.array([[[0,0],[wd,0],[wd,ht]]],dtype=np.int32)
     cv2.fillConvexPoly(mask,points,255)
 
-    # If the invert parameter has the "yes" value, reverse reflection will be
-    # enabled
-    if invert == "yes":
-        mask = cv2.bitwise_not(mask) # Apply for-each-bit NOT operation
+    # reverse reflection if invert is "yes"
+    if invert == True:
+        mask = cv2.bitwise_not(mask)
 
     # composite frame and framet using mask
-    compA = cv2.bitwise_and(framet,framet,mask=mask) # Apply for-each-bit AND operation)
-    compB = cv2.bitwise_and(frame,frame,mask=255-mask) # Apply for-each-bit AND operation)
-    comp = cv2.add(compA,compB) # Reflected image component created
+    compA = cv2.bitwise_and(framet,framet,mask=mask)    # covered mask area
+    compB = cv2.bitwise_and(frame,frame,mask=255-mask)  # uncovered mask area
+    comp = cv2.add(compA,compB) 
 
     # rotate composite
-    if rotation_angle == 90: # 90 degree rotation for each component
+    if rotation_angle == 90: 
         comp = cv2.rotate(comp,cv2.ROTATE_90_CLOCKWISE)
-    elif rotation_angle == 180: # 180 degree rotation for each component
+    elif rotation_angle == 180: 
         comp = cv2.rotate(comp,cv2.ROTATE_180)
-    elif rotation_angle == 270: #270 degree rotation for each component
+    elif rotation_angle == 270: 
         comp = cv2.rotate(comp, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
     # mirror (flip) horizontally
     mirror = cv2.flip(comp,1)
 
-    # concatenate horizontally
+    # concatenate horizontally: superior part
     top = np.hstack((comp,mirror))
 
     # mirror (flip) vertically
@@ -189,7 +184,7 @@ def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
     # concatenate vertically
     kaleidoscope = np.vstack((top,bottom))
 
-    # amplify the final image (50%)
+    # resize the final image to a half of the original size
     kaleidoscope_result = cv2.resize(kaleidoscope, (0,0), fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
 
     return kaleidoscope_result

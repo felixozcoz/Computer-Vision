@@ -1,5 +1,5 @@
 # ---------------------------------------------
-# Fichero: MyFilterApp.py
+# Fichero: graphicInterface.py
 # ---------------------------------------------
 # Escuela de Ingeniería y Arquitectura de Zaragoza
 # Visión por Computador	
@@ -9,17 +9,17 @@
 # Victor Marcuello Baquero      741278
 #
 # Descripción:
-#  Módulo que contiene la implmentación de la interfaz gráfica
+#  Módulo que contiene la interfaz gráfica
 #  de la aplicación de filtros de imagen 
 # ---------------------------------------------
 
 import cv2
 import tkinter as tk
-from tkinter import messagebox, ttk, filedialog, colorchooser
+from tkinter import messagebox, ttk, colorchooser, filedialog
 from PIL import ImageColor, ImageTk, Image
 import filters
 
-class SimpleImageApp:
+class FilterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("MyFilter App")
@@ -47,7 +47,7 @@ class SimpleImageApp:
         self.div_color_reduce_var = tk.IntVar(value=64)
 
         # Variable for the kaleidoscope filter
-        self.invert_var = tk.StringVar(value="Yes")
+        self.invert_var = tk.BooleanVar(value=False)
         self.rotation_var = tk.IntVar(value=0)
 
         # Filters
@@ -85,9 +85,9 @@ class SimpleImageApp:
         self.div_color_reduce_var = tk.Scale(root, label="Color Reduction", from_=2, to=255, resolution=1, variable=self.div_color_reduce_var, orient=tk.HORIZONTAL)
 
         # Slider control for the kaleidoscope filter
-        self.invert_button_select1 = tk.Radiobutton(root, text="Original reflection", value="no", variable=self.invert_var)
-        self.invert_button_select2 = tk.Radiobutton(root, text="Reverse reflection", value="yes", variable=self.invert_var)
-        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=0, to=360, resolution=1, variable=self.rotation_var, orient=tk.HORIZONTAL)
+        self.invert_button_select1 = tk.Radiobutton(root, text="Original reflection", value=False, variable=self.invert_var)
+        self.invert_button_select2 = tk.Radiobutton(root, text="Reverse reflection", value=True, variable=self.invert_var)
+        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=0, to=360, resolution=90, variable=self.rotation_var, orient=tk.HORIZONTAL)
 
         # Capture and save button
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
@@ -265,5 +265,5 @@ class SimpleImageApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = SimpleImageApp(root)
+    app = FilterApp(root)
     root.mainloop()
