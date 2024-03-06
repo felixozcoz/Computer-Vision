@@ -48,7 +48,7 @@ class SimpleImageApp:
 
         # Variable for the kaleidoscope filter
         self.invert_var = tk.StringVar(value="Yes")
-        self.rotation_var = tk.IntVar(value=90)
+        self.rotation_var = tk.IntVar(value=0)
 
         # Filters
         self.filters = {
@@ -87,7 +87,7 @@ class SimpleImageApp:
         # Slider control for the kaleidoscope filter
         self.invert_button_select1 = tk.Radiobutton(root, text="YES", value="yes", variable=self.invert_var)
         self.invert_button_select2 = tk.Radiobutton(root, text="NO", value="no", variable=self.invert_var)
-        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=90, to=270, resolution=90, variable=self.rotation_var, orient=tk.HORIZONTAL)
+        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=0, to=360, resolution=90, variable=self.rotation_var, orient=tk.HORIZONTAL)
 
         # Capture and save button
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
@@ -218,7 +218,8 @@ class SimpleImageApp:
             self.div_color_reduce_var.pack_forget()
 
         if selected_filter != "Kaleidoscope":
-            self.rotation_var.set(90)
+            self.invert_var.set("no")
+            self.rotation_var.set(0)
             self.rotation_angle_slider.pack_forget()
             self.invert_button_select1.pack_forget()
             self.invert_button_select2.pack_forget()
