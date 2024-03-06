@@ -6,7 +6,7 @@ def cubism_filter(img, grid_size):
     
     # Definir el tamaño de los bloques
     block_size = img.shape[0] // grid_size
-    
+
     # Crear una máscara de ceros del mismo tamaño que la imagen
     mask = np.zeros_like(img)
     
@@ -106,9 +106,10 @@ def cubism_func(x, y, block_size=10):
     return (x, y)
 
 #cubism_filter(r'C:\Users\Lenovo\OneDrive\Escritorio\lena_color.jpg', r'C:\Users\Lenovo\OneDrive\Escritorio\lena_cubism.jpg')
-img  = cv2.imread(r'C:\Users\Lenovo\OneDrive\Escritorio\lena_color.jpg', cv2.IMREAD_COLOR)
+#img  = cv2.imread(r'C:\Users\Lenovo\OneDrive\Escritorio\lena_color.jpg', cv2.IMREAD_COLOR)
+img  = cv2.imread(r'C:\Users\usuario\Desktop\lena_color.png', cv2.IMREAD_COLOR)
 
-# Crear una figura con dos subplots
+# Crear una figura con dos subplots-*
 fig, axs = plt.subplots(1, 3, figsize=(10, 5))
 
 # Mostrar la primera imagen en el primer subplot
