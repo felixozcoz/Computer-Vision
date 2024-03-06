@@ -134,25 +134,26 @@ def posterization_filter(frame, div=np.uint8(64)):
 
 #   Optional image processing functions
 
-def gaussian_blurring(frame,delta):
-
-    img_result = cv2.GaussianBlur(frame,delta)
-    return img_result
-
-def median_blurring(frame,delta):
-
-    img_result = cv2.medianBlur(frame,delta)
-    return img_result
-
 def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
+    '''
+        Apply a kaleidoscope filter to an image
 
+        Parameters:
+            image: source image
+            invert: reflect reverse option
+            rotation_angle: kaleidoscope rotation angle
+
+        Output:
+            kaleidoscope_result: result image
+    '''
     frame = cv2.resize(frame,(frame.shape[0],frame.shape[0]))
     ht,wd = frame.shape[:2]
+
     # transpose the image
     framet = cv2.transpose(frame)
 
     # create diagonal bi-tonal mask
-    mask = np.zeros((wd,ht),dtype=np.uint8)
+    mask = np.zeros((ht,wd),dtype=np.uint8)
     points = np.array([[[0,0],[wd,0],[wd,ht]]],dtype=np.int32)
     cv2.fillConvexPoly(mask,points,255)
     if invert == "yes":
