@@ -146,8 +146,10 @@ def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
         Output:
             kaleidoscope_result: result image
     '''
+    # Transform the original image into a squared image (we use the height parameter
+    # in order to resize).
     frame = cv2.resize(frame,(frame.shape[0],frame.shape[0]))
-    ht,wd = frame.shape[:2]
+    ht,wd = frame.shape[:2] # ht = height, wd = width
 
     # transpose the image
     framet = cv2.transpose(frame)
@@ -156,20 +158,23 @@ def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
     mask = np.zeros((ht,wd),dtype=np.uint8)
     points = np.array([[[0,0],[wd,0],[wd,ht]]],dtype=np.int32)
     cv2.fillConvexPoly(mask,points,255)
+
+    # If the invert parameter has the "yes" value, reverse reflection will be
+    # enabled
     if invert == "yes":
-        mask = cv2.bitwise_not(mask)
+        mask = cv2.bitwise_not(mask) # Apply for-each-bit NOT operation
 
     # composite frame and framet using mask
-    compA = cv2.bitwise_and(framet,framet,mask=mask)
-    compB = cv2.bitwise_and(frame,frame,mask=255-mask)
-    comp = cv2.add(compA,compB)
+    compA = cv2.bitwise_and(framet,framet,mask=mask) # Apply for-each-bit AND operation)
+    compB = cv2.bitwise_and(frame,frame,mask=255-mask) # Apply for-each-bit AND operation)
+    comp = cv2.add(compA,compB) # Reflected image component created
 
     # rotate composite
-    if rotation_angle == 90:
+    if rotation_angle == 90: # 90 degree rotation for each component
         comp = cv2.rotate(comp,cv2.ROTATE_90_CLOCKWISE)
-    elif rotation_angle == 180:
+    elif rotation_angle == 180: # 180 degree rotation for each component
         comp = cv2.rotate(comp,cv2.ROTATE_180)
-    elif rotation_angle == 270:
+    elif rotation_angle == 270: #270 degree rotation for each component
         comp = cv2.rotate(comp, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
     # mirror (flip) horizontally
@@ -184,7 +189,8 @@ def kaleidoscope_filter(frame,invert,rotation_angle=np.uint8(90)):
     # concatenate vertically
     kaleidoscope = np.vstack((top,bottom))
 
-    # resize
+    # amplify the final image (50%)
     kaleidoscope_result = cv2.resize(kaleidoscope, (0,0), fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
 
     return kaleidoscope_result
+
