@@ -85,9 +85,9 @@ class SimpleImageApp:
         self.div_color_reduce_var = tk.Scale(root, label="Color Reduction", from_=2, to=255, resolution=1, variable=self.div_color_reduce_var, orient=tk.HORIZONTAL)
 
         # Slider control for the kaleidoscope filter
-        self.invert_button_select1 = tk.Radiobutton(root, text="YES", value="yes", variable=self.invert_var)
-        self.invert_button_select2 = tk.Radiobutton(root, text="NO", value="no", variable=self.invert_var)
-        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=0, to=360, resolution=90, variable=self.rotation_var, orient=tk.HORIZONTAL)
+        self.invert_button_select1 = tk.Radiobutton(root, text="Original reflection", value="no", variable=self.invert_var)
+        self.invert_button_select2 = tk.Radiobutton(root, text="Reverse reflection", value="yes", variable=self.invert_var)
+        self.rotation_angle_slider = tk.Scale(root, label="Rotation Angle", from_=0, to=360, resolution=1, variable=self.rotation_var, orient=tk.HORIZONTAL)
 
         # Capture and save button
         self.btn_capture = tk.Button(root, text="Capture & Save", command=self.capture_and_save)
