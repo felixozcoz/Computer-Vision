@@ -77,49 +77,52 @@ def Sobel_operator(image):
             theta (numpy array): Gradient orientation
     '''
     # create the Sobel kernels
-    kernelX = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.int8) # kernel in the x direction
-    kernelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.int8) # kernel in the y direction
+    kernelX = np.array([[-1, 0, 1], 
+                        [-2, 0, 2], 
+                        [-1, 0, 1]]) # kernel in the x direction
+    kernelY = np.array([[1, 2, 1], 
+                        [0, 0, 0], 
+                        [-1, -2, -1]]) # kernel in the y direction
+    
     # apply the kernels to the image
-    # TODO: ajustar tipo de dato
-    Gx = cv2.filter2D(image, cv2.CV_64F, kernelX)  
-    Gy = cv2.filter2D(image, cv2.CV_64F, kernelY)   
+    Gx = cv2.filter2D(image, cv2.CV_16S, kernelX)  
+    Gy = cv2.filter2D(image, cv2.CV_16S, kernelY)   
 
-    # [-255, 255]
-    Gx = np.int8(Gx) 
-    Gy = np.int8(Gy)
-    
+    # trasladar a rango -255, 255
+    # gradiente x
+    Gx = (Gx - np.min(Gx)) / (np.max(Gx) - np.min(Gx))
+    Gx = Gx * 510 - 255
+    Gx = np.round(Gx)
+    # gradiente y
+    Gy = (Gy - np.min(Gy)) / (np.max(Gy) - np.min(Gy))
+    Gy = Gy * 510 - 255
+    Gy = np.round(Gy)
+
+    # calculate the gradient module
+    G = np.round(np.sqrt(Gx**2 + Gy**2))
+    factor = 255 / np.max(G)
+    G = np.round(G * factor).astype(np.uint8)
+
+    # calculate the gradient orientation
+    theta = np.arctan2(Gy, Gx)
+    # trasladar a rango 0, 2pi	
+    theta = (theta + np.pi) % (2 * np.pi)
+    # trasladar a rango 0, 255
+    theta = (theta / (2 * np.pi)) * 255
+    theta = np.round(theta).astype(np.uint8)
+
+
     # para plotear como en las diapos
-    Gx = Gx//2 + 128
-    Gy = Gy//2 + 128
+    Gx = (Gx//2 + 128).astype(np.uint8)
+    Gy = (Gy//2 + 128).astype(np.uint8)
 
-    # devolver a uint8 para imprimir en imshow
-    Gx = np.uint8(Gx)
-    Gy = np.uint8(Gy)
-
-    print(np.min(Gx), np.max(Gx))
-    print(np.min(Gy), np.max(Gy))
-    
-    # llevar a range 0-255
-    # Gx = np.uint8( np.absolute(Gx) ) # 0 - 255
-    # Gy = np.uint8( np.absolute(Gy) ) # 0 - 255
-
-    # calculate the gradient module and orientation
-    # G = np.sqrt(Gx**2 + Gy**2)
-    # theta = np.arctan2(Gy, Gx)
-
-    # G = np.uint8( np.absolute(G) )
-
-    # theta = np.uint8( theta/(np.pi * 128) )
-
-    cv2.imshow("Gx", Gx)
+    cv2.imshow("Original", image)
+    # cv2.imshow("Gx", Gx)
+    # cv2.imshow("Gy", Gy)
+    cv2.imshow("G", G)
+    cv2.imshow("theta", theta)
     cv2.waitKey(0)
 
-    # plt.title('Original'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(1,3,2),plt.imshow(Gx,cmap = 'gray')
-    # plt.title('Gx'), plt.xticks([]), plt.yticks([])
-    # plt.subplot(1,3,3),plt.imshow(Gy,cmap = 'gray')
-    # plt.title('Gy'), plt.xticks([]), plt.yticks([])
-    # plt.show()
 
     return Gx, Gy
 
