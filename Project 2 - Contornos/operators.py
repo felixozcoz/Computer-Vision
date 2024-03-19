@@ -79,48 +79,51 @@ def Sobel_operator(image):
     # create the Sobel kernels
     kernelX = np.array([[-1, 0, 1], 
                         [-2, 0, 2], 
-                        [-1, 0, 1]]) # kernel in the x direction
+                        [-1, 0, 1]], dtype=np.int8) # kernel in the x direction
     kernelY = np.array([[1, 2, 1], 
                         [0, 0, 0], 
-                        [-1, -2, -1]]) # kernel in the y direction
+                        [-1, -2, -1]], dtype=np.int8) # kernel in the y direction
     
-    # apply the kernels to the image
+    # calculate the gradient in the x and y directions
     Gx = cv2.filter2D(image, cv2.CV_16S, kernelX)  
-    Gy = cv2.filter2D(image, cv2.CV_16S, kernelY)   
+    Gy = cv2.filter2D(image, cv2.CV_16S, kernelY) 
 
-    # trasladar a rango -255, 255
-    # gradiente x
+    # calculate the gradient module
+    G = np.sqrt(Gx.astype(np.int32)**2 + Gy.astype(np.int32)**2)
+
+    # calculate the gradient orientation
+    theta = np.arctan2(Gy, Gx)
+
+    # To Plot --------------------------------
+
+    # bring to the range 0, 2*pi
+    theta = (theta) % (2 * np.pi)
+    theta = ((theta/np.pi)*128).astype(np.uint8)
+
+    # bring to the range 0, 255
+    G = np.round(G).astype(np.uint8)
+    cv2.normalize(G, G, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+   
+   
+    # bring x gradient to the range -255, 255
     Gx = (Gx - np.min(Gx)) / (np.max(Gx) - np.min(Gx))
     Gx = Gx * 510 - 255
     Gx = np.round(Gx)
-    # gradiente y
+
+    # bring y gradient to the range -255, 255
     Gy = (Gy - np.min(Gy)) / (np.max(Gy) - np.min(Gy))
     Gy = Gy * 510 - 255
     Gy = np.round(Gy)
 
-    # calculate the gradient module
-    G = np.round(np.sqrt(Gx**2 + Gy**2))
-    factor = 255 / np.max(G)
-    G = np.round(G * factor).astype(np.uint8)
-
-    # calculate the gradient orientation
-    theta = np.arctan2(Gy, Gx)
-    # trasladar a rango 0, 2pi	
-    theta = (theta + np.pi) % (2 * np.pi)
-    # trasladar a rango 0, 255
-    theta = (theta / (2 * np.pi)) * 255
-    theta = np.round(theta).astype(np.uint8)
-
-
-    # para plotear como en las diapos
+    # bring gradients to the range 0, 255
     Gx = (Gx//2 + 128).astype(np.uint8)
     Gy = (Gy//2 + 128).astype(np.uint8)
 
-    cv2.imshow("Original", image)
+    # cv2.imshow("Original", image)
     # cv2.imshow("Gx", Gx)
     # cv2.imshow("Gy", Gy)
     cv2.imshow("G", G)
-    cv2.imshow("theta", theta)
+    # cv2.imshow("theta", theta)
     cv2.waitKey(0)
 
 
