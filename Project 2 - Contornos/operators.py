@@ -16,6 +16,53 @@
 import cv2
 import numpy as np
 
+# ---------------------------------------------
+
+def _plot_operator_tocheck(image, operator, *args):
+    '''
+        Plot the results of an operator (like diapos)
+
+        Parameters:
+            image (numpy array): Original image
+            operator (function): Operator to apply
+            *args: Arguments of the operator
+
+        Returns:
+            None
+    '''
+    # extract the results of the operator
+    Gx, Gy, G, theta = operator(args)
+
+    # bring to the range 0, 2*pi
+    theta = (theta) % (2 * np.pi)
+    theta = ((theta/np.pi)*128).astype(np.uint8)
+
+    # bring to the range 0, 255
+    G = np.round(G).astype(np.uint8)
+    cv2.normalize(G, G, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+   
+    # bring x gradient to the range -255, 255
+    Gx = (Gx - np.min(Gx)) / (np.max(Gx) - np.min(Gx))
+    Gx = Gx * 510 - 255
+    Gx = np.round(Gx)
+
+    # bring y gradient to the range -255, 255
+    Gy = (Gy - np.min(Gy)) / (np.max(Gy) - np.min(Gy))
+    Gy = Gy * 510 - 255
+    Gy = np.round(Gy)
+
+    # bring gradients to the range 0, 255
+    Gx = np.uint8((Gx//2 + 128))
+    Gy = np.uint8((Gy//2 + 128))
+
+    cv2.imshow("Original", image)
+    cv2.imshow("Gx", Gx)
+    cv2.imshow("Gy", Gy)
+    cv2.imshow("G", G)
+    cv2.imshow("theta", theta)
+    cv2.waitKey(0)
+
+
 def Gaussian_filter(kernel_size, sigma):
     '''
         Implement the Gaussian filter
@@ -34,8 +81,11 @@ def Gaussian_filter(kernel_size, sigma):
     
     # calculate the Gaussian filter
     gfx = ( gaussian_filter_1D_equation(x, sigma) ).reshape(1, kernel_size)  # x direction
+    
+    gfx = gfx / gfx[0][kernel_size//2] # normalization
+    
     gfy = gfx.reshape(kernel_size, 1)                                        # y direction (from top to bottom)       
-
+    
     return gfx, gfy
 
 
@@ -58,12 +108,13 @@ def Gaussian_first_derivative(kernel_size, sigma):
 
     # calculate the first derivative of the Gaussian filter
     gfdx = ( -1 * gaussian_first_derivative_eq(x, sigma) ).reshape(1, kernel_size)  # x direction
-    gfdy = gfdx.reshape(kernel_size, 1)                                             # y direction  (from top to bottom)  
-
+    gfdy = - gfdx.reshape(kernel_size, 1)                                           # y direction  (from top to bottom)  
+    
     return gfdx, gfdy
 
 
-def Sobel_operator(image):
+
+def Sobel_filter(image):
     '''
         Implement the Sobel operator
 
@@ -76,13 +127,9 @@ def Sobel_operator(image):
             G (numpy array): Gradient module
             theta (numpy array): Gradient orientation
     '''
-    # create the Sobel kernels
-    kernelX = np.array([[-1, 0, 1], 
-                        [-2, 0, 2], 
-                        [-1, 0, 1]], dtype=np.int8) # kernel in the x direction
-    kernelY = np.array([[1, 2, 1], 
-                        [0, 0, 0], 
-                        [-1, -2, -1]], dtype=np.int8) # kernel in the y direction
+    # create the Sobel-Feldman operator (Sobel filter)
+    kernelX = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])  # kernel in the x direction
+    kernelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])  # kernel in the y direction
     
     # calculate the gradient in the x and y directions
     Gx = cv2.filter2D(image, cv2.CV_16S, kernelX)  
@@ -94,40 +141,7 @@ def Sobel_operator(image):
     # calculate the gradient orientation
     theta = np.arctan2(Gy, Gx)
 
-    # To Plot --------------------------------
-
-    # bring to the range 0, 2*pi
-    theta = (theta) % (2 * np.pi)
-    theta = ((theta/np.pi)*128).astype(np.uint8)
-
-    # bring to the range 0, 255
-    G = np.round(G).astype(np.uint8)
-    cv2.normalize(G, G, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
-   
-   
-    # bring x gradient to the range -255, 255
-    Gx = (Gx - np.min(Gx)) / (np.max(Gx) - np.min(Gx))
-    Gx = Gx * 510 - 255
-    Gx = np.round(Gx)
-
-    # bring y gradient to the range -255, 255
-    Gy = (Gy - np.min(Gy)) / (np.max(Gy) - np.min(Gy))
-    Gy = Gy * 510 - 255
-    Gy = np.round(Gy)
-
-    # bring gradients to the range 0, 255
-    Gx = (Gx//2 + 128).astype(np.uint8)
-    Gy = (Gy//2 + 128).astype(np.uint8)
-
-    # cv2.imshow("Original", image)
-    # cv2.imshow("Gx", Gx)
-    # cv2.imshow("Gy", Gy)
-    cv2.imshow("G", G)
-    # cv2.imshow("theta", theta)
-    cv2.waitKey(0)
-
-
-    return Gx, Gy
+    return Gx, Gy, G, theta
 
 
 
@@ -153,46 +167,26 @@ def Canny_operator(image, kernel_size=3, sigma=1):
     kernelX = np.outer(gfy, gfdx) # kernel in the x direction
     kernelY = np.outer(gfdy, gfx) # kernel in the y direction (top to bottom)
 
-    print(kernelX)
-    print(kernelY)
-
-    K = np.sum(np.maximum(0, kernelX))
-
-    # normalization of the kernels (positive sum normalization)
-    kernelX = kernelX / K
-    kernelY = kernelY / K
-
     # apply the kernels to the image
-    Gx = cv2.filter2D(img, -1, kernelX)
-    Gy = cv2.filter2D(img, -1, kernelY)
+    Gx = cv2.filter2D(img, cv2.CV_16S, kernelX)
+    Gy = cv2.filter2D(img, cv2.CV_16S, kernelY)
 
-    Gx += 128
-    Gx = np.uint8(Gx/2) + 128
+    # calculate the gradient module
+    G = np.sqrt(Gx.astype(np.int32)**2 + Gy.astype(np.int32)**2)
 
- 
-    # TODO: posible ajuste de rango de color depende de la imagen
-    print(np.min(Gx), np.max(Gx))
-    print(np.min(Gy), np.max(Gy))
+    # calculate the gradient orientation
+    theta = np.arctan2(Gy, Gx)
 
-    cv2.imshow("Original", image)
-    cv2.imshow("Gx", Gx)
-    cv2.imshow("Gy", Gy)
-    cv2.waitKey(0)
-    
-    #return Gx, Gy
+    return Gx, Gy, G, theta
 
 
 
 # ---------------------------------------------
+# MAIN
 
-from matplotlib import pyplot as plt
+img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\chess_table.jpg", cv2.IMREAD_GRAYSCALE)
 
-img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\poster.pgm", cv2.IMREAD_GRAYSCALE)
-Sobel_operator(img)
+# to plot the results of the operators
+# _plot_operator_tocheck(img, Sobel_filter)
+# _plot_operator_tocheck(img, Canny_operator, 5, 1)
 
-exit(0)
-kernel_size = 5
-sigma = 1
-
-Canny_operator(img, kernel_size, sigma)
-    
