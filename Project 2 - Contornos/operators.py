@@ -18,7 +18,7 @@ import numpy as np
 
 # ---------------------------------------------
 
-def _plot_operator_tocheck(image, operator, *args):
+def _plot_operator_tocheck(operator, *args):
     '''
         Plot the results of an operator (like diapos)
 
@@ -31,15 +31,14 @@ def _plot_operator_tocheck(image, operator, *args):
             None
     '''
     # extract the results of the operator
-    Gx, Gy, G, theta = operator(args)
+    Gx, Gy, G, theta = operator(*args)
 
     # bring to the range 0, 2*pi
     theta = (theta) % (2 * np.pi)
     theta = ((theta/np.pi)*128).astype(np.uint8)
 
     # bring to the range 0, 255
-    G = np.round(G).astype(np.uint8)
-    cv2.normalize(G, G, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    G = cv2.convertScaleAbs(G)
    
     # bring x gradient to the range -255, 255
     Gx = (Gx - np.min(Gx)) / (np.max(Gx) - np.min(Gx))
@@ -55,7 +54,7 @@ def _plot_operator_tocheck(image, operator, *args):
     Gx = np.uint8((Gx//2 + 128))
     Gy = np.uint8((Gy//2 + 128))
 
-    cv2.imshow("Original", image)
+    cv2.imshow("Original", args[0])
     cv2.imshow("Gx", Gx)
     cv2.imshow("Gy", Gy)
     cv2.imshow("G", G)
@@ -112,9 +111,9 @@ def Gaussian_first_derivative(kernel_size, sigma):
     
     return gfdx, gfdy
 
+# -------- OPERATORS --------
 
-
-def Sobel_filter(image):
+def Sobel_filter(img):
     '''
         Implement the Sobel operator
 
@@ -129,11 +128,11 @@ def Sobel_filter(image):
     '''
     # create the Sobel-Feldman operator (Sobel filter)
     kernelX = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])  # kernel in the x direction
-    kernelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])  # kernel in the y direction
+    kernelY = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])  # kernel in the y direction 
     
     # calculate the gradient in the x and y directions
-    Gx = cv2.filter2D(image, cv2.CV_16S, kernelX)  
-    Gy = cv2.filter2D(image, cv2.CV_16S, kernelY) 
+    Gx = cv2.filter2D(img, cv2.CV_16S, kernelX)  
+    Gy = cv2.filter2D(img, cv2.CV_16S, kernelY) 
 
     # calculate the gradient module
     G = np.sqrt(Gx.astype(np.int32)**2 + Gy.astype(np.int32)**2)
@@ -145,7 +144,7 @@ def Sobel_filter(image):
 
 
 
-def Canny_operator(image, kernel_size=3, sigma=1):
+def Canny_operator(img, kernel_size=3, sigma=1):
     '''
         Implement the Canny operator
 
@@ -184,9 +183,8 @@ def Canny_operator(image, kernel_size=3, sigma=1):
 # ---------------------------------------------
 # MAIN
 
-img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\chess_table.jpg", cv2.IMREAD_GRAYSCALE)
+img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
 
 # to plot the results of the operators
-# _plot_operator_tocheck(img, Sobel_filter)
+# _plot_operator_tocheck(Sobel_filter, img)
 # _plot_operator_tocheck(img, Canny_operator, 5, 1)
-
