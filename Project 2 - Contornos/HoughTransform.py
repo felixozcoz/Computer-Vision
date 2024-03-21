@@ -35,62 +35,57 @@ def Hough_transform_gradient(image,threshold):
         Implement the Hough transform with orientation gradient applying the Sobel operator
         Parameters:
             image (int): original image
-            threshold (int): orientation gradient magnitude min limit (umbral)
+            threshold (int): orientation gradient magnitude minimum limit (umbral)
         Returns:
-            image: Image with the edges delimited after Hough transform
+            vanishing_point: coordinates in which the vanishing point is present at the image
     '''
     # Calcular el gradiente utilizando el operador Sobel
     _, _, gradient, orientation = op.Sobel_filter(image)
 
-    # Seleccionar la fila central horizontal de la imagen
-    central_row = image[gradient.shape[0] // 2, :]
-    central_x = gradient.shape[0] // 2
-    central_y = gradient.shape[1] // 2
+    # Seleccionar el conjunto de coordenadas de la línea central
+    # gradient.shape[0] = altura (x)
+    # gradient.shape[1] = base (y)
+    central_y = np.uint32(gradient.shape[0] / 2)
+    central_x = np.uint32(gradient.shape[1] / 2)
     
     # Calcular la transformada de Hough con orientación de gradiente para los puntos de la fila central
     accumulator = np.zeros(gradient.shape[1])
     
+    # Comprobar que el punto de fuga no se aproxima ni a nivel horizonal ni a nivel vertical
+    #gradient_round_x = (np.abs(theta) > np.radians(5)) and (np.abs(theta - np.pi/2) > np.radians(5)) and (np.abs(theta - np.pi) > np.radians(5))
+    #gradient_round_y = (np.abs(theta - np.pi*2/3) > np.radians(5)) and (np.abs(theta - 2*np.pi) > np.radians(5)) 
     
-    for i in range(gradient.shape[0]-1):
-        for j in range(gradient.shape[1]-1):
-            theta = orientation[i,j]
-            
-            gradient_round_x = np.abs(theta) > np.radians(5) and np.abs(theta - np.pi/2) > np.radians(5) and np.abs(theta - np.pi) > np.radians(5)
-            gradient_round_y = np.abs(theta - np.pi*(2/3)) > np.radians(5) and np.abs(theta - 2*np.pi) > np.radians(5) 
-            
-            if gradient[i,j] >= threshold and (gradient_round_x and gradient_round_y):            
+    # Comprobar el punto de fuga en la imagen a través del sistema de votación
+    for i in range(gradient.shape[0]):
+        for j in range(gradient.shape[1]):
+            # En caso de que el módulo del gradiente supera el umbral, el píxel realiza su voto 
+            if gradient[i,j] >= threshold:   
+                # Coordenada x en base a la coordenada <x> central y a la posición <j>
                 x = j - central_x
+                # Coordenada y en base a la coordenada <y> central y a la posición <i>
                 y = central_y - i
+                # Representar en <theta> el grado de orientación
+                theta = orientation[i,j]
+                # Calcular la ecuación de la recta con las coordenadas polares (p)
                 rho = x*np.cos(theta) + y*np.sin(theta)
-                vote = int((rho / np.cos(theta) + central_x))
+                # Calcular la coordenada x de la línea central donde intersecta con la ecuación p.  
+                x_vote = int((rho / np.cos(theta) + central_x))
                 
-                if vote >= 0 and vote < gradient.shape[1]:
-                    accumulator[vote] += 1
+                # Aceptar el voto si el valor está ubicado en la línea central
+                if x_vote >= 0 and x_vote < gradient.shape[1]:
+                    accumulator[x_vote] += 1
     
     x_vanishing = np.argmax(accumulator)
     y_vanishing = central_y
-    
-    
-    
-    #thetas = np.deg2rad(np.arange(0, 180))
-    #for x, _ in enumerate(central_row):
-    #    if image_thresholded[central_row_index, x] != 0:
-    #        gradient_orientation = orientation[central_row_index, x]
-    #        for theta_idx, theta in enumerate(thetas):
-    #            rho = int(round(x * np.cos(theta - gradient_orientation) + central_row_index * np.sin(theta - gradient_orientation)))
-    #            accumulator[rho, theta_idx] += 1
-
-    # Encontrar el punto de fuga
-    #x_vanishing, y_vanishing = find_vanishing_point(accumulator)
+    vanishing_point = [x_vanishing, y_vanishing]
     
     plt.imshow(image)
-    plt.scatter(x_vanishing, y_vanishing, c='red', marker='x', s=100)
+    plt.scatter(vanishing_point[0], vanishing_point[1], c='red', marker='x', s=100)
     plt.axhline(image.shape[0] // 2, color='r', linestyle='--', linewidth=1)  # Línea horizontal que representa la fila central
-    plt.plot(central_row)
     plt.title('Punto de Fuga Detectado')
     plt.show()
 
-    return image
+    return vanishing_point
 
                 
                 
@@ -117,10 +112,10 @@ img2 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo2.pgm", cv2.IMREAD
 img3 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo3.pgm", cv2.IMREAD_GRAYSCALE)
 sunset = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\sunset.png", cv2.IMREAD_GRAYSCALE)
 
-hough_img1 = Hough_transform_gradient(img1,100)
-hough_img2 = Hough_transform_gradient(img2,100)
-hough_img3 = Hough_transform_gradient(img3,100)
-sunset_img = Hough_transform_gradient(sunset,100)
+Hough_transform_gradient(img1,100)
+Hough_transform_gradient(img2,100)
+Hough_transform_gradient(img3,100)
+Hough_transform_gradient(sunset,100)
 
 
 #cv2.imshow('Original Image 1',img1)
