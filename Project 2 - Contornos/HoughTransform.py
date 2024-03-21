@@ -29,6 +29,23 @@ def find_vanishing_point(accumulator):
 
     return x_vanishing, y_vanishing
 
+def find_vanishing_point(image, accumulator):
+    # Encontrar el punto de fuga como el punto de intersección de las líneas detectadas en la transformada de Hough
+    max_coord = np.unravel_index(np.argmax(accumulator), accumulator.shape)
+    rho = max_coord[0]
+    theta = max_coord[1]
+
+    # Calcular las coordenadas x e y del punto de fuga
+    x_vanishing = int(rho * np.cos(theta))
+    y_vanishing = int(rho * np.sin(theta))
+
+    # Dibujar las líneas que convergen en el punto de fuga
+    cv2.line(image, (x_vanishing, y_vanishing), (0, y_vanishing), (0, 255, 0), 2)
+    cv2.line(image, (x_vanishing, y_vanishing), (image.shape[1], y_vanishing), (0, 255, 0), 2)
+
+    vanishing_point = [x_vanishing, y_vanishing]
+    return vanishing_point
+
 #Función de la transformada de Hough (errores por corregir)
 def Hough_transform_gradient(image,threshold):
     '''
@@ -77,13 +94,31 @@ def Hough_transform_gradient(image,threshold):
     
     x_vanishing = np.argmax(accumulator)
     y_vanishing = central_y
-    vanishing_point = [x_vanishing, y_vanishing]
+
+    # Dibujar las líneas que convergen en el punto de fuga
+    image_with_lines = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    cv2.line(image_with_lines, (x_vanishing, 0), (x_vanishing, image.shape[0]), (0, 255, 0), 1)
+    cv2.line(image_with_lines, (0, central_y), (image.shape[1], central_y), (0, 255, 0), 1)
+
+    # Dibujar el punto de fuga
+    #cv2.circle(image_with_lines, (x_vanishing, y_vanishing), 5, (0, 0, 255), -1)
+    cv2.line(image_with_lines, [x_vanishing-5,y_vanishing], [x_vanishing+5,y_vanishing], color=[0, 0, 250], thickness=2)
+    cv2.line(image_with_lines, [x_vanishing,y_vanishing-5], [x_vanishing,y_vanishing+5], color=[0, 0, 250], thickness=2)
+
+    # Mostrar la imagen con las líneas y el punto de fuga
+    cv2.imshow('Punto de Fuga Detectado', image_with_lines)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     
-    plt.imshow(image)
-    plt.scatter(vanishing_point[0], vanishing_point[1], c='red', marker='x', s=100)
-    plt.axhline(image.shape[0] // 2, color='r', linestyle='--', linewidth=1)  # Línea horizontal que representa la fila central
-    plt.title('Punto de Fuga Detectado')
-    plt.show()
+    #plt.imshow(image)
+
+    #plt.scatter(vanishing_point[0], vanishing_point[1], c='red', marker='x', s=100)
+    #plt.axhline(image.shape[0] // 2, color='r', linestyle='--', linewidth=1)  # Línea horizontal que representa la fila central
+    #plt.title('Punto de Fuga Detectado')
+    #plt.show()
+    
+    vanishing_point = [x_vanishing, y_vanishing]
 
     return vanishing_point
 
@@ -112,17 +147,18 @@ img2 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo2.pgm", cv2.IMREAD
 img3 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo3.pgm", cv2.IMREAD_GRAYSCALE)
 sunset = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\sunset.png", cv2.IMREAD_GRAYSCALE)
 
-Hough_transform_gradient(img1,100)
-Hough_transform_gradient(img2,100)
-Hough_transform_gradient(img3,100)
-Hough_transform_gradient(sunset,100)
+vanishing_point = Hough_transform_gradient(img1,100)
+
+#Hough_transform_gradient(img2,100)
+#Hough_transform_gradient(img3,100)
+#Hough_transform_gradient(sunset,100)
 
 
 #cv2.imshow('Original Image 1',img1)
 #cv2.imshow('Original Image 2',img2)
 #cv2.imshow('Original Image 3',img3)
 
-#cv2.imshow('Hough Image 1', hough_img1)
+#cv2.imshow('Hough Image 1', img1)
 #cv2.imshow('Hough Image 2', hough_img2)
 #cv2.imshow('Hough Image 3', hough_img3)
 cv2.waitKey(0)
