@@ -40,28 +40,48 @@ def Hough_transform_gradient(image,threshold):
             image: Image with the edges delimited after Hough transform
     '''
     # Calcular el gradiente utilizando el operador Sobel
-    _, _, mod_gradiente, orientation = op.Sobel_filter(image)
-    print(mod_gradiente)
+    _, _, gradient, orientation = op.Sobel_filter(image)
 
     # Seleccionar la fila central horizontal de la imagen
-    central_row_index = image.shape[0] // 2
-    central_row = image[central_row_index, :]
-
-    # Aplicar umbral a la imagen original
-    image_thresholded = np.where(mod_gradiente > threshold, 1, 0)
+    central_row = image[gradient.shape[0] // 2, :]
+    central_x = gradient.shape[0] // 2
+    central_y = gradient.shape[1] // 2
     
     # Calcular la transformada de Hough con orientación de gradiente para los puntos de la fila central
-    accumulator = np.zeros((2 * image.shape[1], 180))
-    thetas = np.deg2rad(np.arange(0, 180))
-    for x, _ in enumerate(central_row):
-        if image_thresholded[central_row_index, x] != 0:
-            gradient_orientation = orientation[central_row_index, x]
-            for theta_idx, theta in enumerate(thetas):
-                rho = int(round(x * np.cos(theta - gradient_orientation) + central_row_index * np.sin(theta - gradient_orientation)))
-                accumulator[rho, theta_idx] += 1
+    accumulator = np.zeros(gradient.shape[1])
+    
+    
+    for i in range(gradient.shape[0]-1):
+        for j in range(gradient.shape[1]-1):
+            theta = orientation[i,j]
+            
+            gradient_round_x = np.abs(theta) > np.radians(5) and np.abs(theta - np.pi/2) > np.radians(5) and np.abs(theta - np.pi) > np.radians(5)
+            gradient_round_y = np.abs(theta - np.pi*(2/3)) > np.radians(5) and np.abs(theta - 2*np.pi) > np.radians(5) 
+            
+            if gradient[i,j] >= threshold and (gradient_round_x and gradient_round_y):            
+                x = j - central_x
+                y = central_y - i
+                rho = x*np.cos(theta) + y*np.sin(theta)
+                vote = int((rho / np.cos(theta) + central_x))
+                
+                if vote >= 0 and vote < gradient.shape[1]:
+                    accumulator[vote] += 1
+    
+    x_vanishing = np.argmax(accumulator)
+    y_vanishing = central_y
+    
+    
+    
+    #thetas = np.deg2rad(np.arange(0, 180))
+    #for x, _ in enumerate(central_row):
+    #    if image_thresholded[central_row_index, x] != 0:
+    #        gradient_orientation = orientation[central_row_index, x]
+    #        for theta_idx, theta in enumerate(thetas):
+    #            rho = int(round(x * np.cos(theta - gradient_orientation) + central_row_index * np.sin(theta - gradient_orientation)))
+    #            accumulator[rho, theta_idx] += 1
 
     # Encontrar el punto de fuga
-    x_vanishing, y_vanishing = find_vanishing_point(accumulator)
+    #x_vanishing, y_vanishing = find_vanishing_point(accumulator)
     
     plt.imshow(image)
     plt.scatter(x_vanishing, y_vanishing, c='red', marker='x', s=100)
@@ -97,10 +117,10 @@ img2 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo2.pgm", cv2.IMREAD
 img3 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo3.pgm", cv2.IMREAD_GRAYSCALE)
 sunset = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\sunset.png", cv2.IMREAD_GRAYSCALE)
 
-#hough_img1 = Hough_transform_gradient(img1,100)
+hough_img1 = Hough_transform_gradient(img1,100)
 hough_img2 = Hough_transform_gradient(img2,100)
 hough_img3 = Hough_transform_gradient(img3,100)
-#sunset_img = Hough_transform_gradient(sunset,180,1)
+sunset_img = Hough_transform_gradient(sunset,100)
 
 
 #cv2.imshow('Original Image 1',img1)
