@@ -3,49 +3,6 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-def get_central_points(image, num_points):
-    # Obteniendo la fila central
-    central_row = image[image.shape[0] // 2, :]
-    
-    # Calculando la discretización
-    discretization = len(central_row) // num_points
-    
-    # Tomando los puntos centrales con la discretización adecuada
-    central_points = []
-    for i in range(0, len(central_row), discretization):
-        central_points.append((i, central_row[i]))
-    
-    return central_points
-
-def find_vanishing_point(accumulator):
-    # Encontrar el punto de fuga como el punto de intersección de las líneas detectadas en la transformada de Hough
-    max_coord = np.unravel_index(np.argmax(accumulator), accumulator.shape)
-    rho = max_coord[0]
-    theta = max_coord[1]
-
-    # Calcular las coordenadas x e y del punto de fuga
-    x_vanishing = int(rho * np.cos(theta))
-    y_vanishing = int(rho * np.sin(theta))
-
-    return x_vanishing, y_vanishing
-
-def find_vanishing_point(image, accumulator):
-    # Encontrar el punto de fuga como el punto de intersección de las líneas detectadas en la transformada de Hough
-    max_coord = np.unravel_index(np.argmax(accumulator), accumulator.shape)
-    rho = max_coord[0]
-    theta = max_coord[1]
-
-    # Calcular las coordenadas x e y del punto de fuga
-    x_vanishing = int(rho * np.cos(theta))
-    y_vanishing = int(rho * np.sin(theta))
-
-    # Dibujar las líneas que convergen en el punto de fuga
-    cv2.line(image, (x_vanishing, y_vanishing), (0, y_vanishing), (0, 255, 0), 2)
-    cv2.line(image, (x_vanishing, y_vanishing), (image.shape[1], y_vanishing), (0, 255, 0), 2)
-
-    vanishing_point = [x_vanishing, y_vanishing]
-    return vanishing_point
-
 #Función de la transformada de Hough (errores por corregir)
 def Hough_transform_gradient(image,threshold):
     '''
@@ -68,10 +25,6 @@ def Hough_transform_gradient(image,threshold):
     # Calcular la transformada de Hough con orientación de gradiente para los puntos de la fila central
     accumulator = np.zeros(gradient.shape[1])
     
-    # Comprobar que el punto de fuga no se aproxima ni a nivel horizonal ni a nivel vertical
-    #gradient_round_x = (np.abs(theta) > np.radians(5)) and (np.abs(theta - np.pi/2) > np.radians(5)) and (np.abs(theta - np.pi) > np.radians(5))
-    #gradient_round_y = (np.abs(theta - np.pi*2/3) > np.radians(5)) and (np.abs(theta - 2*np.pi) > np.radians(5)) 
-    
     # Comprobar el punto de fuga en la imagen a través del sistema de votación
     for i in range(gradient.shape[0]):
         for j in range(gradient.shape[1]):
@@ -87,58 +40,44 @@ def Hough_transform_gradient(image,threshold):
                 rho = x*np.cos(theta) + y*np.sin(theta)
                 # Calcular la coordenada x de la línea central donde intersecta con la ecuación p.  
                 x_vote = int((rho / np.cos(theta) + central_x))
-                
-                # Aceptar el voto si el valor está ubicado en la línea central
+                # Aceptar el voto si el valor de la coordenada x está en el rango [0,width_gradient]
                 if x_vote >= 0 and x_vote < gradient.shape[1]:
                     accumulator[x_vote] += 1
     
     x_vanishing = np.argmax(accumulator)
-    y_vanishing = central_y
-
-    # Dibujar las líneas que convergen en el punto de fuga
-    image_with_lines = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-    cv2.line(image_with_lines, (x_vanishing, 0), (x_vanishing, image.shape[0]), (0, 255, 0), 1)
-    cv2.line(image_with_lines, (0, central_y), (image.shape[1], central_y), (0, 255, 0), 1)
-
-    # Dibujar el punto de fuga
-    #cv2.circle(image_with_lines, (x_vanishing, y_vanishing), 5, (0, 0, 255), -1)
-    cv2.line(image_with_lines, [x_vanishing-5,y_vanishing], [x_vanishing+5,y_vanishing], color=[0, 0, 250], thickness=2)
-    cv2.line(image_with_lines, [x_vanishing,y_vanishing-5], [x_vanishing,y_vanishing+5], color=[0, 0, 250], thickness=2)
-
-    # Mostrar la imagen con las líneas y el punto de fuga
-    cv2.imshow('Punto de Fuga Detectado', image_with_lines)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
+    vanishing_point = [x_vanishing, central_y]
+    vanishing_lines = []
+    index = 0;
     
-    #plt.imshow(image)
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            if accumulator[j] > 0:
+                x = j - central_x
+                y = central_y - i
+                theta = orientation[i,j]
+                rho = x*np.cos(theta) + y*np.sin(theta)
+                x_vote = int((rho / np.cos(theta) + central_x))
+                if x_vote == vanishing_point[1]:
+                    vanishing_lines.append([(x_vote, i), (central_x, central_y)])
+                    
 
-    #plt.scatter(vanishing_point[0], vanishing_point[1], c='red', marker='x', s=100)
-    #plt.axhline(image.shape[0] // 2, color='r', linestyle='--', linewidth=1)  # Línea horizontal que representa la fila central
-    #plt.title('Punto de Fuga Detectado')
-    #plt.show()
+    return vanishing_point, vanishing_lines
+
+
+def plot_vanishing_point(image,vanishing_point,vanishing_lines):
+    hough_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     
-    vanishing_point = [x_vanishing, y_vanishing]
+    for line in vanishing_lines:
+        p1, p2 = line
+        x1, y1 = p1
+        x2, y2 = p2
+        cv2.line(hough_image,(x1,y1),(x2,y2),(0,255,0),1)
+    
+    # Dibujar el punto de fuga mediante una cruz
+    cv2.line(hough_image, [vanishing_point[0]-5,vanishing_point[1]], [vanishing_point[0]+5,vanishing_point[1]], color=[0, 0, 250], thickness=2)
+    cv2.line(hough_image, [vanishing_point[0],vanishing_point[1]-5], [vanishing_point[0],vanishing_point[1]+5], color=[0, 0, 250], thickness=2)
 
-    return vanishing_point
-
-                
-                
-                 
-            
-    # Dibujar las líneas detectadas en la imagen original
-    #for rho, theta in hough_lines:
-    #    a = np.cos(np.deg2rad(theta))
-    #    b = np.sin(np.deg2rad(theta))
-    #    x0 = a * rho
-    #    y0 = b * rho
-    #    x1 = int(x0 + 1000 * (-b))
-    #    y1 = int(y0 + 1000 * (a))
-    #    x2 = int(x0 - 1000 * (-b))
-    #    y2 = int(y0 - 1000 * (a))
-    #    cv2.line(image, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
-# --- Verificación de la transformada de Hough ---
+    return hough_image
 
 #img1 = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\pasillo1.pgm", cv2.IMREAD_GRAYSCALE)
 
@@ -147,18 +86,25 @@ img2 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo2.pgm", cv2.IMREAD
 img3 = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo3.pgm", cv2.IMREAD_GRAYSCALE)
 sunset = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\sunset.png", cv2.IMREAD_GRAYSCALE)
 
-vanishing_point = Hough_transform_gradient(img1,100)
+vanishing_point1, vanishing_lines1 = Hough_transform_gradient(img1,100)
+vanishing_point2, vanishing_lines2 = Hough_transform_gradient(img2,100)
+vanishing_point3, vanishing_lines3 = Hough_transform_gradient(img3,100)
+vanishing_point4, vanishing_lines4 = Hough_transform_gradient(sunset,100)
 
-#Hough_transform_gradient(img2,100)
-#Hough_transform_gradient(img3,100)
-#Hough_transform_gradient(sunset,100)
+hough_img1 = plot_vanishing_point(img1,vanishing_point1,vanishing_lines1)
+hough_img2 = plot_vanishing_point(img2,vanishing_point2,vanishing_lines2)
+hough_img3 = plot_vanishing_point(img3,vanishing_point3,vanishing_lines3)
+hough_sunset = plot_vanishing_point(sunset,vanishing_point4,vanishing_lines4)
 
+cv2.imshow('Original Image 1',img1)
+cv2.imshow('Original Image 2',img2)
+cv2.imshow('Original Image 3',img3)
+cv2.imshow('Original Sunset', sunset)
 
-#cv2.imshow('Original Image 1',img1)
-#cv2.imshow('Original Image 2',img2)
-#cv2.imshow('Original Image 3',img3)
+cv2.imshow('Hough Image 1', hough_img1)
+cv2.imshow('Hough Image 2', hough_img2)
+cv2.imshow('Hough Image 3', hough_img3)
+cv2.imshow('Hough Sunset', hough_sunset)
 
-#cv2.imshow('Hough Image 1', img1)
-#cv2.imshow('Hough Image 2', hough_img2)
-#cv2.imshow('Hough Image 3', hough_img3)
 cv2.waitKey(0)
+cv2.destroyAllWindows()
