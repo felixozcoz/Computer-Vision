@@ -185,10 +185,11 @@ def Canny_operator(img, kernel_size=3, sigma=1):
 
 #img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
 
-img = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
-#_,_,_,sobel_orientation = Sobel_filter(img)
-#cv2.imshow('Orientation Gradient',sobel_orientation)
-#cv2.waitKey(0)
+img = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\pasillo2.pgm", cv2.IMREAD_GRAYSCALE)
+Gx,Gy,G,theta = Sobel_filter(img)
+Gx,Gy,G,theta = Canny_operator(img,5,1)
+
+
 # to plot the results of the operators
-# _plot_operator_tocheck(Sobel_filter, img)
-# _plot_operator_tocheck(img, Canny_operator, 5, 1)
+_plot_operator_tocheck(Sobel_filter, img)
+_plot_operator_tocheck(Canny_operator,img , 5, 1)
