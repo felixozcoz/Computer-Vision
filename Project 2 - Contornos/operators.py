@@ -191,5 +191,5 @@ def Canny_operator(img, kernel_size=3, sigma=1):
 #cv2.imshow('Orientation Gradient',sobel_orientation)
 #cv2.waitKey(0)
 # to plot the results of the operators
-# _plot_operator_tocheck(Sobel_filter, img)
-# _plot_operator_tocheck(img, Canny_operator, 5, 1)
+_plot_operator_tocheck(Sobel_filter, img)
+_plot_operator_tocheck(Canny_operator,img , 5, 1)
