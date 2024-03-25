@@ -137,6 +137,7 @@ def Sobel_filter(img):
     # calculate the gradient module
     G = np.sqrt(Gx.astype(np.int32)**2 + Gy.astype(np.int32)**2)
 
+
     # calculate the gradient orientation
     theta = np.arctan2(Gy, Gx)
 
@@ -183,9 +184,9 @@ def Canny_operator(img, kernel_size=3, sigma=1):
 # ---------------------------------------------
 # MAIN
 
-#img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
+# img = cv2.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
 
-img = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
+# img = cv2.imread(r"C:\Users\usuario\Desktop\Contornos\poster.pgm", cv2.IMREAD_GRAYSCALE)
 #_,_,_,sobel_orientation = Sobel_filter(img)
 #cv2.imshow('Orientation Gradient',sobel_orientation)
 #cv2.waitKey(0)
