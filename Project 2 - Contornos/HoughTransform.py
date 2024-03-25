@@ -17,13 +17,13 @@ def hough(src):
     _, thresh = cv.threshold(gradient, threshold, 255,cv.THRESH_BINARY)
 
     # Quitar las líneas verticales, porque contribuyen a la detección de bordes
-
+    # Utilizar orientation, quitar los puntos cuyo gradiente sea próximo a 0 0 180 que son ya que son perpendiculares a las líneas verticales
     # Aplicar threshold para quitar líneas verticales
     cv.imshow("Threshold", thresh)
     cv.waitKey(0)
 
     h, w = img.shape
-
+    
     # Indices de píxeles blancos
     y_idx, x_idx = np.nonzero(thresh) # filas, columnas
     accumulator = np.zeros((w, 1), dtype=int)
@@ -54,9 +54,9 @@ def hough(src):
             # Recta vota por punto j
             accumulator[j_buscado] += 1
 
-    print(accumulator)
+    # print(accumulator)
     median = np.median(accumulator)
-    # ind = np.where(accumulator > median+max(accumulator//2))
+    ind = np.where(accumulator > median+max(accumulator//2))
     for ind in ind[0]:
         cv.circle(src, (ind, 256), 2, (0, 0, 255), 2)
     
