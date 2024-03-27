@@ -1,147 +1,187 @@
 import cv2 as cv
 import numpy as np
-import array
 import operators as op
 
-# Leer imagen 
-def hough(src):
+
+def vanishing_point_detector(path, threshold=100):
+    '''
+        Detect the vanishing point of an image using the Hough Transform
+
+        Parameters:
+            src (numpy array): Source image
+            threshold (int): Threshold for the gradient
+
+        Returns:
+            numpy array: Image with the vanishing point
+    '''
+    src = cv.imread(path)
+
+    # Convert image to grayscale
     img = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+
     h, w = img.shape
 
+    # Apply the Sobel filter
+    _, _, gradient, orientation = op.Sobel_filter(img)
 
-    Gx, Gy, gradient, orientation = op.Sobel_filter(img)
+    # Threshold the gradient
+    _, thresh = cv.threshold(gradient, threshold, 255, cv.THRESH_BINARY)
 
-    threshold = 130 # Umbral de thresholding
-
-    # Aplicar filtro de thresholding
-    _, thresh = cv.threshold(gradient, threshold, 255,cv.THRESH_BINARY)
-
-    # cv.imshow("Threshold_before", thresh)
-    
-    # Aplicar threshold para quitar líneas verticales
+    # Indices of white pixels
     h, w = img.shape
-    # Indices de píxeles blancos
-    y_idx, x_idx = np.nonzero(thresh) # filas, columnas
-    diff = np.radians(15)
-    tosee = src.copy()
 
+    # Indices of white pixels
+    y_idx, x_idx = np.nonzero(thresh) # rows, columns
+    diff = np.radians(5)              # 5 degrees margin
+
+    # Threshold the points that are not vertical or horizontal to zero
     for ind in range(len(y_idx)):
-        # Obtener índices de keypoint en la imagen
+        # Get keypoint indices in the image
         i = y_idx[ind]
         j = x_idx[ind]
 
-            # verticales        
-        a = (-diff < orientation[i, j] < diff)
-        b = (-np.pi-diff < orientation[i, j] < -np.pi+diff)
+            # vertical margin   
+        a = (-diff < orientation[i, j] < diff)                 
+        b = (-np.pi-diff < orientation[i, j] < -np.pi+diff)     
         c = (np.pi-diff < orientation[i, j] < np.pi+diff)
-            # horizontales
+            # horizontal margin   
         d = (np.pi/2-diff < orientation[i, j] < np.pi/2+diff)
         e = (-np.pi/2-diff < orientation[i, j] < -np.pi/2+diff)
 
         if a | b | c | d | e:
-            # print(i,j, orientation[i,j], np.degrees(orientation[i,j]))
-            cv.circle(tosee, (j,i), 1, (0, 0, 255), 1)
             thresh[i,j] = 0
 
-    # cv.imshow("Threshold_new", thresh)
-    # cv.imshow("src", tosee)
-    # cv.waitKey(0)
-    # exit() 
-
+    # Indices of white pixels
     y_idx, x_idx = np.nonzero(thresh) # filas, columnas
 
-    accumulator = np.zeros(w, dtype=int)
-    # diag = int(np.sqrt((h//2)**2 + (w//2)**2))
-    # accumulator = np.zeros(2*diag+1, dtype=int)
-    # print(accumulator.shape)
-    pts = [set() for _ in range(w)]
-    # Rectas que votan por puntos
+    accumulator, pts = _vote_line(h, w, y_idx, x_idx, orientation)
+
+    final_img = _plot_vanishing_point(src, accumulator, pts)
+
+    # _, final_img = cv.imencode('.jpg', img_plot)
+
+    return final_img
+
+
+
+def _vote_line(h, w, y_idx, x_idx, orientation):
+    '''
+        Vote for the lines in the Hough space
+
+        Parameters:
+            h (int): Height of the image
+            w (int): Width of the image
+            y_idx (numpy array): Rows of the image whos values are different from zero
+            x_idx (numpy array): Columns of the image whos values are different from zero
+            orientation (numpy array): Orientation of the gradient
+
+        Returns:
+            numpy array: Accumulator of the votes
+            list: List of points that voted for each line
+    
+    '''
+    # Definitions
+    accumulator = np.zeros(w, dtype=int)    # counting votes
+    pts = [set() for _ in range(w)]         # store points that voted for each line
+    
+    # Lines voting process in the Hough space
     for ind in range(len(y_idx)):
-        # Obtener índices de keypoint en la imagen
+        # Get keypoint indices in the image
         i = y_idx[ind]
         j = x_idx[ind]
 
-        # Extraer orientación del gradiente 
-        theta = orientation[i, j]    # indica la pendiente de la recta perpendicular a la recta que buscamos en el espacio de Hough
+        # Extract the orientation of the gradient
+        theta = orientation[i, j]   
         
-        # Centrar imagen ((0,0) en centro de la imagen)
+        # Transform the image coordinates to the Hough space (centering the origin)
         x = j - w/2
         y = h/2 - i
 
-        # Ecuación de la recta en espacio de Hough
+        # Line equation in the Hough space
         th_sin, th_cos = np.sin(theta), np.cos(theta)
         rho = x * th_cos + y * th_sin
-        # Buscar coordenada x en la intersección con eje y en el espacio de Hough ( y = 0 )
-        
-            
-        x_to_find = rho/th_cos # if th_cos != 0 else 0
-        j_aprox = int(x_to_find + w/2)
 
-      
-        
-        # print( "j=", j, "i=", i, "j_real=",j_real, "rho=", rho)#, "theta=", theta)
-        # continue
-        # aux = src.copy()
-        # cv.circle(src, (j, i), 1, (0, 0, 255), 1)
-        if 0 <= j_aprox < w:
-            # print("i=", i, "j=", j, "j_aprox=", j_aprox, "x_to_find=", x_to_find, "rho=", rho, "cos=", th_cos, "sin=", th_sin, "x=", x, "y=", y, "theta=", theta, "theta_deg=", np.degrees(theta))
-            # aux = src.copy()
-            # for j_var in range(w):
-            #     x_var = j_var - w/2
-            #     y_var = int((rho - (x_var * th_cos)) / th_sin)
-            #     i_var = int(h/2 - y_var)
-            #     if 0 <= i_var < h: 
-            #         cv.circle(aux, (j_var, i_var), 1, (0, 255, 0), 1)
+        # Find the x coordinate in the intersection with the y axis in the Hough space ( y = 0 )    
+        x_to_find = rho/th_cos 
+        voted_x = int(x_to_find + w/2)
 
-            # cv.circle(src, (j, i), 1, (0, 255, 0), 1)
-            # cv.circle(aux, (j, i), 2, (0, 0, 255), 2)
-            # cv.circle(aux, (j_aprox, h//2), 2, (255, 0, 0), 2)
-            # cv.imshow("aux", aux)
-            # cv.waitKey(0)
-            # Recta vota por punto j
-            accumulator[j_aprox] += 1
-            pts[j_aprox].add((j,i))
-    
+        # Check if the voted x is inside the image
+        if 0 <= voted_x < w:
+            accumulator[voted_x] += 1
+            pts[voted_x].add((j,i))
 
-    ind, val = k_maximos_con_indices(accumulator, 5)
-    print(ind, val)
+    return accumulator, pts
 
-    for i in ind:
-        cv.circle(src, (i, h//2), 2, (0, 255, 0), 2)    # Puntos más votados
 
-    # median = np.median(accumulator)
-    # max = np.argmax(accumulator)
-    # for i in range(len(accumulator)):
-    #     if accumulator[i] > median:
-    #         cv.circle(src, (i, h//2), 1, (255, 0, 0), 1)    # Puntos más votados
+def _plot_vanishing_point(src, accumulator, pts):
+    '''
+        Plot the vanishing point in the image
+
+        Parameters:
+            src (numpy array): Source image
+            accumulator (numpy array): Accumulator of the votes
+            pts (list): List of points that voted for each line
+            h (int): Height of the image
+            w (int): Width of the image
+
+        Returns:
+            numpy array: Image with the vanishing point
+    '''
+    h, _ = src.shape[:2]
+
+    # Find the 5 most voted lines
+    ind, _ = _k_maximos_con_indices(accumulator, 5)
+
+    # Plot the most voted points in the horizontal axis
+    # for i in ind:
+    #     cv.circle(src, (i, h//2), 2, (0, 255, 0), 2)    # Puntos más votados
+
+    # Plot the most voted line
     max_ind = ind[0]
     for p in pts[max_ind]:
         cv.line(src, (p[0], p[1]), (max_ind, h//2), (255, 0, 0), 1)
-        cv.circle(src, p, 2, (0, 0, 255), 2)    # puntos que votaron por la recta más votada
+        cv.circle(src, p, 2, (0, 0, 255), 2)    # points that voted for the most voted point
 
-    cv.circle(src, (max_ind, h//2), 2, (0, 0, 0), 2)  # Punto más votado
+    cv.circle(src, (max_ind, h//2), 2, (0, 0, 0), 2)  # most voted point
 
     return src
 
-def k_maximos_con_indices(arreglo, k):
-    # Obtener los índices que ordenarían el arreglo de forma descendente
+
+def _k_maximos_con_indices(arreglo, k):
+    '''
+        Obtain the K maximum values and their indices
+
+        Parameters:
+            arreglo (numpy array): Array of values
+            k (int): Number of maximum values to obtain
+        
+        Returns:
+            tuple: Indices of the K maximum values, K maximum values
+    '''
+    # order the values in descending order
     indices_descendentes = np.argsort(arreglo)[::-1]
     
-    # Obtener los K primeros índices (que corresponden a los K valores máximos)
+    # Obtain the K maximum values
     k_indices_maximos = indices_descendentes[:k]
     
-    # Obtener los K valores máximos y sus índices
+    # Obtain the K maximum values and their indices
     k_valores_maximos = arreglo[k_indices_maximos]
     
     return k_indices_maximos, k_valores_maximos
 
-src2 = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\pasillo2.pgm")
-# src1 = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\oblicua.png")
-src2 = hough(src2)
 
-src3 = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\pasillo3.pgm")
-src3 = hough(src3)
+def convertir_a_numpy(imagen):
+    if isinstance(imagen, np.ndarray):
+        # Si la imagen ya es un numpy array, simplemente devolverla
+        return imagen
+    else:
+        # Si la imagen es de otro tipo (por ejemplo, PIL Image), convertirla a un numpy array
+        imagen_np = np.array(imagen)
+        return imagen_np
+    
 
-cv.imshow("Pasillo 2", src2)
-cv.imshow("Pasillo 3", src3)
-cv.waitKey(0)
+# ---------------------------------------------
+    
+# src = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\otra.jpg")
+# cv.imshow("Vanishing Point", vanishing_point_detector(r"C:\Users\felix\OneDrive\Escritorio\otra.jpg", 150))
+# cv.waitKey(0)
