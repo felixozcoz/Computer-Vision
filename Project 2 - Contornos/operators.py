@@ -179,12 +179,3 @@ def Canny_operator(img, kernel_size=3, sigma=1):
     theta = np.arctan2(Gy, Gx)
 
     return Gx, Gy, G, theta
-
-
-
-# ---------------------------------------------
-# MAIN
-
-# img = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\Contornos\poster.pgm", cv.IMREAD_GRAYSCALE)
-# sGx, sGy, sG, sorientation = _plot_operator_tocheck(Sobel_filter, img)
-# cGx, cGy, cG, corientation = _plot_operator_tocheck(Canny_operator, img, 3, 1)

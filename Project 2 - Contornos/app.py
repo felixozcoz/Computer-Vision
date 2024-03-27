@@ -1,3 +1,17 @@
+# ---------------------------------------------
+# Fichero: app.py
+# ---------------------------------------------
+# Escuela de Ingeniería y Arquitectura de Zaragoza
+# Visión por Computador	
+# 2023- 2024
+#
+# Félix Ozcoz Eraso             801108
+# Victor Marcuello Baquero      741278
+#
+# Descripción:
+#   Aplicación de escritorio para buscar el punto de fuga de una imagen
+# ---------------------------------------------
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scale
 from PIL import Image, ImageTk

@@ -1,3 +1,19 @@
+# ---------------------------------------------
+# Fichero: HoughTransform.py
+# ---------------------------------------------
+# Escuela de Ingeniería y Arquitectura de Zaragoza
+# Visión por Computador	
+# 2023- 2024
+#
+# Félix Ozcoz Eraso             801108
+# Victor Marcuello Baquero      741278
+#
+# Descripción:
+#   Módulo que contiene las funciones de 
+#   búsqueda de punto de fuga basado en transformada de Hough
+# ---------------------------------------------
+
+
 import cv2 as cv
 import numpy as np
 import operators as op
@@ -170,18 +186,3 @@ def _k_maximos_con_indices(arreglo, k):
     return k_indices_maximos, k_valores_maximos
 
 
-def convertir_a_numpy(imagen):
-    if isinstance(imagen, np.ndarray):
-        # Si la imagen ya es un numpy array, simplemente devolverla
-        return imagen
-    else:
-        # Si la imagen es de otro tipo (por ejemplo, PIL Image), convertirla a un numpy array
-        imagen_np = np.array(imagen)
-        return imagen_np
-    
-
-# ---------------------------------------------
-    
-# src = cv.imread(r"C:\Users\felix\OneDrive\Escritorio\otra.jpg")
-# cv.imshow("Vanishing Point", vanishing_point_detector(r"C:\Users\felix\OneDrive\Escritorio\otra.jpg", 150))
-# cv.waitKey(0)
