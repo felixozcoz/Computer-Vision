@@ -33,13 +33,13 @@ def find_homography_ransac(src_points, dst_points, threshold=4, max_iters=1000):
         
         # Calcular la distancia de reproyección y encontrar inliers
         distances = calculate_distances(src_points, dst_points, homography)
-        print("Distances: ",distances)
+        #print("Distances: ",distances)
         inliers = distances < threshold
         
         # Contar el número de inliers
         num_inliers = np.sum(inliers)
         
-        print("Inliers (Num):",num_inliers)
+        #print("Inliers (Num):",num_inliers)
         
         # Actualizar la mejor homografía si encontramos más inliers
         if num_inliers > max_inliers:
@@ -47,7 +47,7 @@ def find_homography_ransac(src_points, dst_points, threshold=4, max_iters=1000):
             best_homography = homography
             best_inliers = inliers
     
-    print("Homography:",best_homography)
+    #print("Homography:",best_homography)
     return best_homography, best_inliers
 
 
@@ -59,6 +59,8 @@ def calculate_homography(src_points, dst_points):
     # Construir la matriz de coeficientes A
     A = []
     for src, dst in zip(src_points, dst_points):
+        #x, y = src
+        #xp, yp = dst
         x = src[0][0]
         y = src[0][1]
         xp = dst[0][0]
@@ -104,7 +106,7 @@ def ransac_homography(matches, keypoints1, keypoints2, threshold=4, max_iters=10
     
     return homography, mask
     
-def create_panorama2(img1, img2, direction):
+def create_panorama1(img1, img2, direction):
     # Detect keypoints and compute descriptors using SIFT
     sift = cv.SIFT_create()
     keypoints1_sift, descriptors1_sift = sift.detectAndCompute(img1, None)
@@ -121,7 +123,7 @@ def create_panorama2(img1, img2, direction):
     # Apply ratio test for SIFT
     good_matches_sift = []
     for m, n in matches_sift:
-        if m.distance < 0.90 * n.distance:
+        if m.distance < 1 * n.distance:
             good_matches_sift.append(m)
 
     # Run RANSAC to estimate homography
@@ -140,7 +142,75 @@ def create_panorama2(img1, img2, direction):
         img2_resized = cv.resize(img2, (width, height))
         panorama = cv.warpPerspective(img1, homography, (width, height * 2))
         panorama[0:height, 0:width] = img2_resized if direction == 'up' else img1
+    
+    # Warp images to create panorama
+    #h1, w1 = img1.shape[:2]
+    #h2, w2 = img2.shape[:2]
+    #panorama_width = w1 + w2
+    
+    #if direction == 'right':
+    #    panorama = cv.warpPerspective(img1, homography, (panorama_width, h1))
+    #    panorama[0:h1, w2:panorama_width] = img2
+    #elif direction == 'left':
+    #    panorama = cv.warpPerspective(img2, homography, (panorama_width, h1))
+    #    panorama[0:h1, 0:w1] = img1
       
+    return panorama
+
+def create_panorama2(images, direction):
+    if len(images) < 2:
+        print("Se requieren al menos dos imágenes para crear un panorama.")
+        return None
+    
+    # Detect keypoints and compute descriptors using SIFT for each image
+    sift = cv.SIFT_create()
+    keypoints_sift = []
+    descriptors_sift = []
+    for img in images:
+        keypoints, descriptors = sift.detectAndCompute(img, None)
+        keypoints_sift.append(keypoints)
+        descriptors_sift.append(descriptors)
+
+    # Match descriptors for consecutive image pairs
+    bf_sift = cv.BFMatcher()
+    matches_sift = []
+    for i in range(len(images) - 1):
+        matches = bf_sift.knnMatch(descriptors_sift[i], descriptors_sift[i + 1], k=2)
+        good_matches = []
+        for m, n in matches:
+            if m.distance < 0.90 * n.distance:
+                good_matches.append(m)
+        matches_sift.append(good_matches)
+
+    # Run RANSAC to estimate homography for each consecutive pair
+    homographies = []
+    for matches, keypoints1, keypoints2 in zip(matches_sift, keypoints_sift[:-1], keypoints_sift[1:]):
+        src_points = np.float32([keypoints1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+        dst_points = np.float32([keypoints2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+        homography, _ = ransac_homography(matches, keypoints1, keypoints2)
+        homographies.append(homography)
+
+    # Warp images to create panorama
+    heights, widths = zip(*[img.shape[:2] for img in images])
+    max_height = max(heights)
+    total_width = sum(widths) if direction == 'right' or direction == 'left' else max(widths)
+    total_height = sum(heights) if direction == 'up' or direction == 'down' else max(heights)
+
+    panorama = np.zeros((total_height, total_width, 3), dtype=np.uint8)
+
+    if direction == 'right' or direction == 'down':
+        x_offset = 0
+        for img, homography in zip(images, homographies):
+            warped_img = cv.warpPerspective(img, homography, (total_width, total_height))
+            panorama[:, x_offset:x_offset + img.shape[1]] = warped_img[:, :img.shape[1]]
+            x_offset += img.shape[1]
+    elif direction == 'left' or direction == 'up':
+        x_offset = 0
+        for img, homography in zip(images[::-1], homographies[::-1]):
+            warped_img = cv.warpPerspective(img, homography, (total_width, total_height))
+            panorama[:, x_offset:x_offset + img.shape[1]] = warped_img[:, :img.shape[1]]
+            x_offset += img.shape[1]
+
     return panorama
 
 def general_panorama_function(image_paths):
@@ -149,6 +219,8 @@ def general_panorama_function(image_paths):
     src3 = cv.imread(image_paths[2])
     src4 = cv.imread(image_paths[3])
     src5 = cv.imread(image_paths[4])
+    #src_images = [src1,src2,src3,src4,src5]
+    src_images = [src2,src1]
     
     img1 = cv.cvtColor(src1, cv.COLOR_BGR2GRAY)
     img2 = cv.cvtColor(src2, cv.COLOR_BGR2GRAY)
@@ -156,21 +228,24 @@ def general_panorama_function(image_paths):
     img4 = cv.cvtColor(src4, cv.COLOR_BGR2GRAY)
     img5 = cv.cvtColor(src5, cv.COLOR_BGR2GRAY)
     
-    panorama = create_panorama2(src3,src1,"right")
-    panorama = create_panorama2(panorama,src2,"right")
-    panorama = create_panorama2(src5,panorama,"right")
-    panorama = create_panorama2(panorama,src4,"right")
+    panorama = create_panorama1(src5,src4,"right")
+    #panorama = create_panorama2(panorama,src3,"right")
+    #panorama = create_panorama2(src4,src3,"right")
+    #panorama = create_panorama2(panorama,src2,"right")
+    #panorama = create_panorama2(src5,panorama,"right")
+    #panorama = create_panorama2(panorama,src4,"right")
+    panorama2 = create_panorama2(src_images,"right")
     
     #print(panorama)
-    cv.imshow('Panorama',panorama)
+    cv.imshow('Panorama',panorama2)
     cv.waitKey()
     cv.destroyAllWindows()
     
 
-path_img1 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building3.JPG' # Parte central del edificio
+path_img1 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building1.JPG' # Parte extrema izquierda del edificio
 path_img2 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building2.JPG' # Parte izquierda del edificio
-path_img3 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building4.JPG' # Parte derecha del edificio
-path_img4 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building1.JPG' # Parte extrema izquierda del edificio
+path_img3 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building3.JPG' # Parte central del edificio
+path_img4 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building4.JPG' # Parte derecha del edificio
 path_img5 = 'C:\\Users\\usuario\\Desktop\\BuildingScene\\building5.JPG' # Parte extrema derecha del edificio
 image_paths = [path_img1,path_img2,path_img3,path_img4,path_img5]    
 
