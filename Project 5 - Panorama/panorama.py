@@ -50,6 +50,7 @@ def find_homography_ransac(src_points, dst_points, threshold=4, max_iters=1000):
     print("Homography:",best_homography)
     return best_homography, best_inliers
 
+
 def calculate_homography(src_points, dst_points):
     # Verificar si src_points y dst_points tienen la forma adecuada
     if len(src_points.shape) != 3 or len(dst_points.shape) != 3 or src_points.shape[1:] != (1, 2) or dst_points.shape[1:] != (1, 2):
@@ -89,22 +90,21 @@ def ransac_homography(matches, keypoints1, keypoints2, threshold=4, max_iters=10
     src_points = np.float32([keypoints1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     dst_points = np.float32([keypoints2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
     
-    homography, inliers = find_homography_ransac(src_points, dst_points, threshold=threshold, max_iters=max_iters)
-    
-    print(homography)
+    #homography, inliers = find_homography_ransac(src_points, dst_points, threshold=threshold, max_iters=max_iters)
+    homography, mask = cv.findHomography(src_points, dst_points, cv.RANSAC, 10.0)
     
     if homography is None:
         raise ValueError("No se encontró ninguna homografía válida.")
     
     # Convertir inliers a formato booleano
-    mask = np.zeros(len(matches), dtype=bool)
-    mask[np.where(inliers)] = True
+    #mask = np.zeros(len(matches), dtype=bool)
+    #mask[np.where(inliers)] = True
     
     homography = homography.astype(np.float32)
     
     return homography, mask
     
-def create_panorama2(img1, img2):
+def create_panorama2(img1, img2, direction):
     # Detect keypoints and compute descriptors using SIFT
     sift = cv.SIFT_create()
     keypoints1_sift, descriptors1_sift = sift.detectAndCompute(img1, None)
@@ -121,7 +121,7 @@ def create_panorama2(img1, img2):
     # Apply ratio test for SIFT
     good_matches_sift = []
     for m, n in matches_sift:
-        if m.distance < 0.50 * n.distance:
+        if m.distance < 0.90 * n.distance:
             good_matches_sift.append(m)
 
     # Run RANSAC to estimate homography
@@ -129,8 +129,17 @@ def create_panorama2(img1, img2):
 
     # Warp images to create panorama
     height, width = img1.shape[:2]
-    panorama = cv.warpPerspective(img1, homography, (width * 2, height))
-    panorama[0:height, 0:width] = img2
+    
+    if direction == 'right' or direction == 'left':
+        img2_resized = cv.resize(img2, (width, height))
+        panorama_width = width * 2 if direction == 'right' or direction == 'left' else width
+        panorama_height = height * 2 if direction == 'up' or direction == 'down' else height
+        panorama = cv.warpPerspective(img1 if direction == 'right' or direction == 'up' else img2_resized, homography, (panorama_width, panorama_height))
+        panorama[0:height, 0:width] = img2_resized if direction == 'right' or direction == 'up' else img1
+    elif direction == 'up' or direction == 'down':
+        img2_resized = cv.resize(img2, (width, height))
+        panorama = cv.warpPerspective(img1, homography, (width, height * 2))
+        panorama[0:height, 0:width] = img2_resized if direction == 'up' else img1
       
     return panorama
 
@@ -147,13 +156,13 @@ def general_panorama_function(image_paths):
     img4 = cv.cvtColor(src4, cv.COLOR_BGR2GRAY)
     img5 = cv.cvtColor(src5, cv.COLOR_BGR2GRAY)
     
-    panorama = create_panorama2(img1,img2)
-    panorama2 = create_panorama2(panorama,img3)
-    panorama3 = create_panorama2(panorama2,img4)
-    panorama4 = create_panorama2(panorama3,img5)
+    panorama = create_panorama2(src3,src1,"right")
+    panorama = create_panorama2(panorama,src2,"right")
+    panorama = create_panorama2(src5,panorama,"right")
+    panorama = create_panorama2(panorama,src4,"right")
     
     #print(panorama)
-    cv.imshow('Panorama',panorama4)
+    cv.imshow('Panorama',panorama)
     cv.waitKey()
     cv.destroyAllWindows()
     
